@@ -12,4 +12,3 @@ CREATE TABLE servicios_tecnicos (
     FOREIGN KEY (servicio_id) REFERENCES servicios(id),
     FOREIGN KEY (tecnico_id) REFERENCES tecnicos(id)
 ) ENGINE=InnoDB;
-
