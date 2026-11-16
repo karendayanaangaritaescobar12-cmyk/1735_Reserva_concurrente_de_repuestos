@@ -4,37 +4,45 @@ import com.carmotors.dao.EvaluacionProveedorDao;
 import com.carmotors.dao.LoteDao;
 import com.carmotors.dao.ProveedorDao;
 import com.carmotors.dao.RepuestoDao;
+import com.carmotors.dao.ReservaRepuestoDao;
 import com.carmotors.modelo.EvaluacionProveedor;
 import com.carmotors.modelo.Lote;
 import com.carmotors.modelo.Proveedor;
 import com.carmotors.modelo.Repuesto;
+import com.carmotors.modelo.ReservaRepuesto;
+import com.carmotors.modelo.ReservaRepuesto.EstadoReserva;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 
-/** Servicio inventario/proveedores. Día 2: catálogo, lotes, evaluación. Yeimer */
+
 public class InventarioProveedorServicio {
 
     private final ProveedorDao proveedores;
     private final RepuestoDao repuestos;
     private final LoteDao lotes;
     private final EvaluacionProveedorDao evaluaciones;
+    private final ReservaRepuestoDao reservas;
 
     public InventarioProveedorServicio(ProveedorDao proveedores, RepuestoDao repuestos,
-                                       LoteDao lotes, EvaluacionProveedorDao evaluaciones) {
+                                       LoteDao lotes, EvaluacionProveedorDao evaluaciones,
+                                       ReservaRepuestoDao reservas) {
         this.proveedores = proveedores;
         this.repuestos = repuestos;
         this.lotes = lotes;
         this.evaluaciones = evaluaciones;
+        this.reservas = reservas;
     }
 
+
     public int registrarProveedor(String nombre, String contacto) throws SQLException {
-        Proveedor proveedor = new Proveedor(0, obligatorio(nombre, 255, "Nombre del proveedor"),
+        Proveedor p = new Proveedor(0, obligatorio(nombre, 255, "Nombre del proveedor"),
                 opcional(contacto, 255, "Contacto"));
         try {
-            return proveedores.insertar(proveedor);
+            return proveedores.insertar(p);
         } catch (SQLIntegrityConstraintViolationException e) {
             throw new IllegalArgumentException("El proveedor ya existe o los datos no son válidos.", e);
         }
@@ -59,17 +67,16 @@ public class InventarioProveedorServicio {
         if (stock < 0 || stockMinimo < 0)
             throw new IllegalArgumentException("Stock y stock mínimo no pueden ser negativos.");
         obtenerProveedor(proveedorId);
-        Repuesto repuesto = new Repuesto(0, obligatorio(nombre, 255, "Nombre del repuesto"),
+        Repuesto r = new Repuesto(0, obligatorio(nombre, 255, "Nombre del repuesto"),
                 opcional(marca, 100, "Marca"), tipoId, proveedorId,
                 precioCompra, precioVenta, stock, stockMinimo);
         try {
-            return repuestos.insertar(repuesto);
+            return repuestos.insertar(r);
         } catch (SQLIntegrityConstraintViolationException e) {
-            throw new IllegalArgumentException("No se pudo registrar el repuesto (revisa tipo y proveedor).", e);
+            throw new IllegalArgumentException("No se pudo registrar el repuesto.", e);
         }
     }
 
-    /** Catálogo por proveedor. */
     public List<Repuesto> catalogoPorProveedor(int proveedorId) throws SQLException {
         obtenerProveedor(proveedorId);
         return repuestos.listarPorProveedor(proveedorId);
@@ -96,7 +103,7 @@ public class InventarioProveedorServicio {
                 repuestoId, proveedorId, fechaIngreso, fechaCaducidad, cantidadRecibida);
         try {
             int id = lotes.insertar(lote);
-            repuestos.sumarStock(repuestoId, cantidadRecibida); // actualiza stock del repuesto
+            repuestos.sumarStock(repuestoId, cantidadRecibida);
             return id;
         } catch (SQLIntegrityConstraintViolationException e) {
             throw new IllegalArgumentException("El código de lote ya existe o los datos no son válidos.", e);
@@ -107,10 +114,6 @@ public class InventarioProveedorServicio {
         return lotes.listarPorRepuesto(repuestoId);
     }
 
-    public List<Lote> lotesPorProveedor(int proveedorId) throws SQLException {
-        return lotes.listarPorProveedor(proveedorId);
-    }
-
     public int registrarEvaluacion(int proveedorId, int calidad, int puntualidad,
                                    String observaciones) throws SQLException {
         if (calidad < 1 || calidad > 5)
@@ -118,15 +121,95 @@ public class InventarioProveedorServicio {
         if (puntualidad < 1 || puntualidad > 5)
             throw new IllegalArgumentException("Calificación de puntualidad debe estar entre 1 y 5.");
         obtenerProveedor(proveedorId);
-        EvaluacionProveedor evaluacion = new EvaluacionProveedor(
+        return evaluaciones.insertar(new EvaluacionProveedor(
                 proveedorId, LocalDate.now(), calidad, puntualidad,
-                opcional(observaciones, 500, "Observaciones"));
-        return evaluaciones.insertar(evaluacion);
+                opcional(observaciones, 500, "Observaciones")));
     }
 
     public List<EvaluacionProveedor> evaluacionesDe(int proveedorId) throws SQLException {
         obtenerProveedor(proveedorId);
         return evaluaciones.listarPorProveedor(proveedorId);
+    }
+
+    public List<Repuesto> alertasStockBajo() throws SQLException {
+        return repuestos.listarBajoStockMinimo();
+    }
+
+    public List<Lote> alertasCaducidad() throws SQLException {
+        return lotes.listarProximosACaducar();
+    }
+
+    public List<String> generarReporteAlertas() throws SQLException {
+        List<String> lineas = new ArrayList<>();
+        List<Repuesto> bajos = alertasStockBajo();
+        if (bajos.isEmpty()) {
+            lineas.add("Sin alertas de stock bajo.");
+        } else {
+            lineas.add("=== ALERTA: Stock bajo mínimo ===");
+            for (Repuesto r : bajos) {
+                lineas.add(String.format("  - [%d] %s | stock=%d | mínimo=%d",
+                        r.getId(), r.getNombre(), r.getCantidadStock(), r.getStockMinimo()));
+            }
+        }
+        List<Lote> caduca = alertasCaducidad();
+        if (caduca.isEmpty()) {
+            lineas.add("Sin alertas de caducidad.");
+        } else {
+            lineas.add("=== ALERTA: Lotes por caducar / caducados ===");
+            for (Lote l : caduca) {
+                lineas.add(String.format("  - %s | repuestoId=%d | caduca=%s | disponible=%d%s",
+                        l.getCodigoLote(), l.getRepuestoId(), l.getFechaCaducidad(),
+                        l.getCantidadDisponible(),
+                        l.estaCaducado() ? " [CADUCADO]" : ""));
+            }
+        }
+        return lineas;
+    }
+
+
+    public ReservaRepuesto reservar(int repuestoId, int cantidad, int servicioId) throws SQLException {
+        if (cantidad <= 0)
+            throw new IllegalArgumentException("La cantidad a reservar debe ser mayor a cero.");
+        Repuesto repuesto = obtenerRepuesto(repuestoId);
+        if (!repuesto.tieneStockSuficiente(cantidad)) {
+            throw new IllegalArgumentException(String.format(
+                    "Stock insuficiente para repuesto id=%d. Solicitado=%d, Disponible=%d",
+                    repuestoId, cantidad, repuesto.getCantidadStock()));
+        }
+        ReservaRepuesto reserva = new ReservaRepuesto(repuestoId, servicioId, cantidad);
+        reservas.insertar(reserva);
+        return reserva;
+    }
+
+
+    public void descontarStock(int servicioId) throws SQLException {
+        List<ReservaRepuesto> lista = reservas.listarPorServicio(servicioId);
+        for (ReservaRepuesto reserva : lista) {
+            if (reserva.getEstado() != EstadoReserva.RESERVADO) {
+                continue; // evita descontar dos veces
+            }
+            Repuesto repuesto = obtenerRepuesto(reserva.getRepuestoId());
+            int nuevo = repuesto.getCantidadStock() - reserva.getCantidad();
+            if (nuevo < 0) {
+                throw new IllegalArgumentException(String.format(
+                        "Stock insuficiente al descontar repuesto id=%d. Disponible=%d, Reservado=%d",
+                        reserva.getRepuestoId(), repuesto.getCantidadStock(), reserva.getCantidad()));
+            }
+            repuestos.actualizarStock(repuesto.getId(), nuevo);
+            reservas.actualizarEstado(reserva.getId(), EstadoReserva.DESCONTADO);
+        }
+    }
+
+    public void cancelarReservas(int servicioId) throws SQLException {
+        for (ReservaRepuesto reserva : reservas.listarPorServicio(servicioId)) {
+            if (reserva.getEstado() == EstadoReserva.RESERVADO) {
+                reservas.actualizarEstado(reserva.getId(), EstadoReserva.CANCELADO);
+            }
+        }
+    }
+
+    public List<ReservaRepuesto> reservasDeServicio(int servicioId) throws SQLException {
+        return reservas.listarPorServicio(servicioId);
     }
 
     private static String obligatorio(String valor, int limite, String campo) {
