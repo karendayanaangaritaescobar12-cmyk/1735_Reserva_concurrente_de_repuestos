@@ -10,7 +10,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import com.carmotors.controlador.OrdenServicioControlador;
-import com.carmotors.vista.MenuPrincipal;
+import com.carmotors.vista.MenuOrdenes;
 
 public class OrdenServicioPrueba {
     @FunctionalInterface interface Accion { void ejecutar() throws Exception; }
@@ -67,7 +67,7 @@ public class OrdenServicioPrueba {
             String acciones = "abc\n2\nno-numero\n2\n" + id + "\n3\n4\n" + id + "\n1\n0\n";
             try (var entrada = new Scanner(acciones);
                  var salida = new PrintStream(buffer, true, StandardCharsets.UTF_8)) {
-                new MenuPrincipal(new OrdenServicioControlador(servicio), entrada, salida).mostrar();
+                new MenuOrdenes(new OrdenServicioControlador(servicio), entrada, salida).mostrar();
             }
             String consola = buffer.toString(StandardCharsets.UTF_8);
             comprobar(consola.contains("Selecciona una opción") && consola.contains("Ingresa un número válido"),

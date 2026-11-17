@@ -1,88 +1,91 @@
-package com.carmotors.dao;
+package com.carmotors.modelo;
 
-import com.carmotors.config.ConexionFactory;
-import com.carmotors.modelo.Proveedor;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.time.LocalDate;
 
-/** DAO JDBC de proveedores. Día 2 - Yeimer */
-public class ProveedorDao {
 
-    public int insertar(Proveedor proveedor) throws SQLException {
-        String sql = "INSERT INTO proveedores (nombre, contacto) VALUES (?, ?)";
-        try (Connection conexion = ConexionFactory.getInstancia().abrir();
-             PreparedStatement ps = conexion.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-            ps.setString(1, proveedor.getNombre());
-            ps.setString(2, proveedor.getContacto());
-            ps.executeUpdate();
-            try (ResultSet keys = ps.getGeneratedKeys()) {
-                if (keys.next()) {
-                    int id = keys.getInt(1);
-                    proveedor.setId(id);
-                    return id;
-                }
-            }
-        }
-        return 0;
+public class EvaluacionProveedor {
+
+    private int id;
+    private int proveedorId;
+    private LocalDate fechaEvaluacion;
+    private int calificacionCalidad;
+    private int calificacionPuntualidad;
+    private String observaciones;
+
+    public EvaluacionProveedor() {
     }
 
-    public void actualizar(Proveedor proveedor) throws SQLException {
-        String sql = "UPDATE proveedores SET nombre = ?, contacto = ? WHERE id = ?";
-        try (Connection conexion = ConexionFactory.getInstancia().abrir();
-             PreparedStatement ps = conexion.prepareStatement(sql)) {
-            ps.setString(1, proveedor.getNombre());
-            ps.setString(2, proveedor.getContacto());
-            ps.setInt(3, proveedor.getId());
-            ps.executeUpdate();
-        }
+    public EvaluacionProveedor(int id, int proveedorId, LocalDate fechaEvaluacion,
+                               int calificacionCalidad, int calificacionPuntualidad,
+                               String observaciones) {
+        this.id = id;
+        this.proveedorId = proveedorId;
+        this.fechaEvaluacion = fechaEvaluacion;
+        this.calificacionCalidad = calificacionCalidad;
+        this.calificacionPuntualidad = calificacionPuntualidad;
+        this.observaciones = observaciones;
     }
 
-    public Optional<Proveedor> buscarPorId(int id) throws SQLException {
-        String sql = "SELECT id, nombre, contacto FROM proveedores WHERE id = ?";
-        try (Connection conexion = ConexionFactory.getInstancia().abrir();
-             PreparedStatement ps = conexion.prepareStatement(sql)) {
-            ps.setInt(1, id);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapear(rs));
-            }
-        }
-        return Optional.empty();
+    public int getId() {
+        return id;
     }
 
-    public Optional<Proveedor> buscarPorNombre(String nombre) throws SQLException {
-        String sql = "SELECT id, nombre, contacto FROM proveedores WHERE nombre = ?";
-        try (Connection conexion = ConexionFactory.getInstancia().abrir();
-             PreparedStatement ps = conexion.prepareStatement(sql)) {
-            ps.setString(1, nombre);
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) return Optional.of(mapear(rs));
-            }
-        }
-        return Optional.empty();
+    public void setId(int id) {
+        this.id = id;
     }
 
-    public List<Proveedor> listarTodos() throws SQLException {
-        String sql = "SELECT id, nombre, contacto FROM proveedores ORDER BY nombre";
-        List<Proveedor> lista = new ArrayList<>();
-        try (Connection conexion = ConexionFactory.getInstancia().abrir();
-             PreparedStatement ps = conexion.prepareStatement(sql);
-             ResultSet rs = ps.executeQuery()) {
-            while (rs.next()) lista.add(mapear(rs));
-        }
-        return lista;
+    public int getProveedorId() {
+        return proveedorId;
     }
 
-    private Proveedor mapear(ResultSet rs) throws SQLException {
-        Proveedor p = new Proveedor();
-        p.setId(rs.getInt("id"));
-        p.setNombre(rs.getString("nombre"));
-        p.setContacto(rs.getString("contacto"));
-        return p;
+    public void setProveedorId(int proveedorId) {
+        this.proveedorId = proveedorId;
+    }
+
+    public LocalDate getFechaEvaluacion() {
+        return fechaEvaluacion;
+    }
+
+    public void setFechaEvaluacion(LocalDate fechaEvaluacion) {
+        this.fechaEvaluacion = fechaEvaluacion;
+    }
+
+    public int getCalificacionCalidad() {
+        return calificacionCalidad;
+    }
+
+    public void setCalificacionCalidad(int calificacionCalidad) {
+        this.calificacionCalidad = calificacionCalidad;
+    }
+
+    public int getCalificacionPuntualidad() {
+        return calificacionPuntualidad;
+    }
+
+    public void setCalificacionPuntualidad(int calificacionPuntualidad) {
+        this.calificacionPuntualidad = calificacionPuntualidad;
+    }
+
+    public String getObservaciones() {
+        return observaciones;
+    }
+
+    public void setObservaciones(String observaciones) {
+        this.observaciones = observaciones;
+    }
+
+
+    public double getPromedio() {
+        return (calificacionCalidad + calificacionPuntualidad) / 2.0;
+    }
+
+    @Override
+    public String toString() {
+        return "EvaluacionProveedor{id=" + id
+                + ", proveedorId=" + proveedorId
+                + ", fecha=" + fechaEvaluacion
+                + ", calidad=" + calificacionCalidad
+                + ", puntualidad=" + calificacionPuntualidad
+                + ", promedio=" + getPromedio() + "}";
     }
 }

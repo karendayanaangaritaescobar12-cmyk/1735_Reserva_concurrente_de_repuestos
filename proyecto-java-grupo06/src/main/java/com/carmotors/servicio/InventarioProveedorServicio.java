@@ -2,8 +2,8 @@ package com.carmotors.servicio;
 
 import com.carmotors.dao.EvaluacionProveedorDao;
 import com.carmotors.dao.LoteDao;
-import com.carmotors.dao.ProveedorDao;
-import com.carmotors.dao.RepuestoDao;
+import com.carmotors.dao.JdbcProveedorDao;
+import com.carmotors.dao.JdbcRepuestoDao;
 import com.carmotors.dao.ReservaRepuestoDao;
 import com.carmotors.modelo.EvaluacionProveedor;
 import com.carmotors.modelo.Lote;
@@ -21,13 +21,13 @@ import java.util.List;
 
 public class InventarioProveedorServicio {
 
-    private final ProveedorDao proveedores;
-    private final RepuestoDao repuestos;
+    private final JdbcProveedorDao proveedores;
+    private final JdbcRepuestoDao repuestos;
     private final LoteDao lotes;
     private final EvaluacionProveedorDao evaluaciones;
     private final ReservaRepuestoDao reservas;
 
-    public InventarioProveedorServicio(ProveedorDao proveedores, RepuestoDao repuestos,
+    public InventarioProveedorServicio(JdbcProveedorDao proveedores, JdbcRepuestoDao repuestos,
                                        LoteDao lotes, EvaluacionProveedorDao evaluaciones,
                                        ReservaRepuestoDao reservas) {
         this.proveedores = proveedores;
@@ -121,7 +121,7 @@ public class InventarioProveedorServicio {
         if (puntualidad < 1 || puntualidad > 5)
             throw new IllegalArgumentException("Calificación de puntualidad debe estar entre 1 y 5.");
         obtenerProveedor(proveedorId);
-        return evaluaciones.insertar(new EvaluacionProveedor(
+        return evaluaciones.insertar(new EvaluacionProveedor(0,
                 proveedorId, LocalDate.now(), calidad, puntualidad,
                 opcional(observaciones, 500, "Observaciones")));
     }
