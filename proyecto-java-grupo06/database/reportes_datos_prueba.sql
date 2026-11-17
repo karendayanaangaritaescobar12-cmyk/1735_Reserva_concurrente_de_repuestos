@@ -1,6 +1,6 @@
 USE carmotors;
 
--- Datos de prueba de los reportes gerenciales (Keiler).
+-- Datos de prueba de los reportes gerenciales.
 -- Requiere schema.sql, schema_ordenes.sql y data.sql.
 -- Se puede ejecutar varias veces: no duplica técnicos, órdenes, asignaciones ni repuestos usados.
 -- Resultados esperados: docs/reportes-resultados-esperados.md

@@ -13,9 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Controlador de reportes. Día 3 - Keiler.
  * La vista (el menú) le pasa lo que escribió el usuario y el controlador llama al servicio.
- * Las fechas llegan como texto, por ejemplo "2026-10-01".
  */
 public class ReporteControlador {
     private final ReporteServicio reportes;
@@ -60,7 +58,6 @@ public class ReporteControlador {
     }
 
     /**
-     * Convierte el texto "2026-10-01" en una fecha.
      * Si el usuario escribe mal la fecha, lanza IllegalArgumentException con un mensaje claro,
      * para que el menú muestre el error en vez de cerrarse.
      */

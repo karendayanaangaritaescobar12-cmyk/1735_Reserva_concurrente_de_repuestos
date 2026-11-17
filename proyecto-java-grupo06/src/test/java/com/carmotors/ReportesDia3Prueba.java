@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Pruebas del día 3 de reportes. Día 3 - Keiler.
+ * Pruebas del día 3 de reportes.
  * Sin argumentos usa datos en memoria. Con --mysql también revisa la base de datos.
  */
 public class ReportesDia3Prueba {

@@ -14,7 +14,6 @@ import java.sql.SQLIntegrityConstraintViolationException;
 import java.time.LocalDate;
 import java.util.List;
 
-/** Servicio inventario/proveedores. Día 2: catálogo, lotes, evaluación. Yeimer */
 public class InventarioProveedorServicio {
 
     private final ProveedorDao proveedores;

@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-/** Busca en MySQL los datos que necesita la factura de una orden. Día 3 - Keiler. */
+/** Busca en MySQL los datos que necesita la factura de una orden. */
 public class FacturaDao {
 
     /** Devuelve los datos de la orden, o null si la orden no existe. */

@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 
 /**
- * Datos que el módulo de reportes le entrega a facturación. Día 3 - Keiler.
+ * Datos que el módulo de reportes le entrega a facturación.
  * Facturación usa estos datos para calcular los impuestos y el total final.
  */
 public class DatosFactura {

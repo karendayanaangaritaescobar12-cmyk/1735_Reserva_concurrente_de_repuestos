@@ -1,6 +1,6 @@
 # Reportes gerenciales — resultados esperados
 
-Parte de Keiler en CarMotors.
+Módulo de reportes de CarMotors.
 
 ## Archivos
 

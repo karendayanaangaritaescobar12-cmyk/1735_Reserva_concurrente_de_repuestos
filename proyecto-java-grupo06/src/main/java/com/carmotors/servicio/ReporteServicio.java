@@ -20,7 +20,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Reportes gerenciales calculados con Streams y lambdas. Día 2 - Keiler.
+ * Reportes gerenciales calculados con Streams y lambdas.
  * Todos reciben un periodo [desde, hasta] (ambos incluidos) sobre la fecha de recepción de la orden.
  */
 public class ReporteServicio {
