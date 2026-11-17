@@ -11,7 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-/** DAO JDBC de proveedores. Día 2 - Yeimer */
+
 public class ProveedorDao {
 
     public int insertar(Proveedor proveedor) throws SQLException {
