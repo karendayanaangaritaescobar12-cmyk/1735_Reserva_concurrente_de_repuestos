@@ -25,7 +25,8 @@ tipos de mantenimiento, estados, servicios, técnicos y la relación servicios-t
 Un vehículo pertenece a un cliente; cada servicio referencia vehículo, tipo y estado.
 Un servicio puede tener varios técnicos y un técnico puede atender varios servicios.
 
-![Diagrama entidad-relación del equipo](docs/diagrama-er.png)
+![Diagrama entidad-relación del equipo](<img width="1320" height="928" alt="diagrama-er" src="https://github.com/user-attachments/assets/684fac2b-71c5-47e7-b8d8-58204ee12943" />
+)
 
 Los SQL principales cubren este módulo y sus dependencias. La integración del esquema
 de inventario y las cantidades finales de datos corresponde a la entrega del equipo.
