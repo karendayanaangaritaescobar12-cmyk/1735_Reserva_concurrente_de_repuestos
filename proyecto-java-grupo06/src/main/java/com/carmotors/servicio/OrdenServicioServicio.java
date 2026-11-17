@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
 
-/** Día 2: creación, consulta y asignación de técnicos. */
+/** Creación, consulta y asignación de técnicos a órdenes de servicio. */
 public class OrdenServicioServicio {
     @FunctionalInterface
     public interface Conexiones { Connection abrir() throws SQLException; }
