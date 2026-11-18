@@ -1,7 +1,6 @@
 # Sistema de Gestión para el Taller Automotriz CarMotors
 
-CarMotors organiza la información del taller. Esta entrega documenta el módulo de
-órdenes de servicio; los archivos de los demás integrantes se conservan para su integración.
+CarMotors gestiona clientes, vehículos y órdenes de servicio de un taller automotriz. El proyecto también incluye módulos de inventario y reportes pendientes de conectar al menú.
 
 ## Tecnologías
 
@@ -16,7 +15,11 @@ Java 17, MySQL 8, JDBC, Maven y consola.
   0 y 99999999.99, con hasta dos decimales. Las órdenes nacen en estado Pendiente.
 - Confirmar o revertir la transacción de asignación de técnicos.
 
-Esta parte no incluye facturación, consumo de repuestos ni finalización de servicios.
+## Estado de los demás módulos
+
+- **Clientes y vehículos:** registro, consulta del historial y recordatorios de mantenimiento preventivo desde la consola.
+- **Inventario y proveedores:** catálogo, lotes, evaluaciones, alertas y reservas implementados en el servicio y el controlador. Quedan pendientes el acceso desde el menú y la integración de reservas y descuentos con el ciclo de órdenes.
+- **Reportes y facturación:** reportes de servicios, productividad y consumo de repuestos, además del subtotal de una orden completada. Quedan pendientes el acceso desde el menú, la emisión de la factura y el ciclo de estados hasta la entrega.
 
 ## Base de datos
 
@@ -25,11 +28,9 @@ tipos de mantenimiento, estados, servicios, técnicos y la relación servicios-t
 Un vehículo pertenece a un cliente; cada servicio referencia vehículo, tipo y estado.
 Un servicio puede tener varios técnicos y un técnico puede atender varios servicios.
 
-![Diagrama entidad-relación del equipo](<img width="1320" height="928" alt="diagrama-er" src="https://github.com/user-attachments/assets/684fac2b-71c5-47e7-b8d8-58204ee12943" />
-)
+![Diagrama entidad-relación del equipo](docs/diagrama-er.png)
 
-Los SQL principales cubren este módulo y sus dependencias. La integración del esquema
-de inventario y las cantidades finales de datos corresponde a la entrega del equipo.
+Los scripts de lotes, evaluaciones y reservas complementan el esquema base para las pruebas de inventario.
 
 ## Instalación y ejecución
 
@@ -40,12 +41,12 @@ Requisitos: JDK 17 o superior, Maven y MySQL Server 8.
    git clone <URL-del-repositorio>
    cd proyecto-java-grupo6/proyecto-java-grupo06
    ```
-2. Crear una base nueva y ejecutar, en este orden, desde el cliente MySQL:
+2. Abrir el cliente MySQL desde el directorio del proyecto y ejecutar los scripts sobre una instalación de prueba nueva:
    ```sql
-   CREATE DATABASE carmotors CHARACTER SET utf8mb4;
-   USE carmotors;
    SOURCE database/schema.sql;
    SOURCE database/data.sql;
+   SOURCE database/schema_lotes_evaluaciones.sql;
+   SOURCE database/schema_reservas.sql;
    ```
    Estos scripts se ejecutan una vez sobre una base nueva; no son una migración
    para una base que ya contiene las tablas.
@@ -57,33 +58,19 @@ Requisitos: JDK 17 o superior, Maven y MySQL Server 8.
    ```
 4. Compilar y ejecutar:
    ```powershell
-   mvn -Pordenes clean compile exec:java
+   mvn clean compile exec:java
    ```
    Los datos de ejemplo incluyen vehículo, tipo de mantenimiento y técnico con ID 1.
 
-El perfil `ordenes` compila únicamente esta parte. La compilación general queda
-pendiente de corregir errores previos en inventario/proveedores: `EvaluacionProveedor.java`
-declara otra clase y el servicio de inventario referencia un `RepuestoDao` inexistente.
+## Pruebas
 
-## Pruebas del módulo
+Compila las clases de prueba con `mvn test-compile` y ejecuta sus métodos `main` desde el IDE. Las clases ejecutables son `com.carmotors.OrdenServicioPrueba`, `com.carmotors.ReportesDia2Prueba` y `com.carmotors.ReportesDia3Prueba`.
 
-`src/test/java/com/carmotors/OrdenServicioPrueba.java` es una prueba ejecutable desde
-su método `main` en el IDE. Sin argumentos comprueba 11 entradas inválidas sin abrir
-conexiones. No se ejecuta automáticamente con `mvn test`.
+- Sin argumentos, las pruebas cubren validaciones de órdenes, cálculos de reportes y datos de facturación sin abrir conexiones.
+- Con `--mysql`, usa una base exclusiva de pruebas y las variables de conexión indicadas arriba. Para reportes, carga `database/reportes_datos_prueba.sql` después de `database/data.sql`. Consulta los [resultados esperados](docs/reportes-resultados-esperados.md).
+- El modo `--h2` de órdenes falla al cargar `schema.sql` porque H2 rechaza la sentencia MySQL `CREATE DATABASE`.
 
-Con el argumento `--mysql`, utiliza las variables de conexión y los datos de ejemplo
-de `schema.sql` y `data.sql`. Debe ejecutarse sobre una base exclusiva de pruebas;
-crea una orden y elimina esa orden y sus asignaciones al terminar.
-
-También admite `--h2` si se agrega el JAR H2 2.3.232 al classpath de la prueba en el
-IDE. Este modo crea una base temporal en memoria, ejecuta ambos SQL y comprueba
-creación, consulta, listado, asignación sin duplicados, rollback por técnico inexistente
-y navegación de consola mediante el controlador. H2 se usa solo para comprobar el
-módulo; la aplicación mantiene su conexión MySQL.
-
-Validación realizada: compilación Maven con compatibilidad Java 17 (`-Pordenes test-compile`),
-arranque de consola mediante `-Pordenes exec:java`, 11 validaciones sin BD y prueba
-de integración H2 completadas. Pendiente de ejecutar contra MySQL real.
+Se verificó la compilación con compatibilidad Java 17 y pasaron las tres pruebas sin base de datos. La ejecución contra MySQL queda pendiente.
 
 ## Decisiones de diseño
 
