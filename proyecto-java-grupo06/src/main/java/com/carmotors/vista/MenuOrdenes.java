@@ -8,6 +8,7 @@ import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.Scanner;
+import java.util.NoSuchElementException;
 
 /** Consola del módulo de órdenes de servicio. */
 public class MenuOrdenes {
@@ -33,9 +34,18 @@ public class MenuOrdenes {
                     case "1" -> {
                         int vehiculo = entero("ID del vehículo: ");
                         int tipo = entero("ID del tipo de mantenimiento: ");
+                        salida.println("Servicios sugeridos:");
+                        for (String nombre : controlador.serviciosSugeridos()) {
+                            salida.println("- " + nombre);
+                        }
+                        String nombreServicio = leer("Escribe el nombre del servicio que necesitas: ");
+                        while (nombreServicio.isBlank() || nombreServicio.length() > 100) {
+                            salida.println("Escribe un nombre de entre 1 y 100 caracteres.");
+                            nombreServicio = leer("Nombre del servicio: ");
+                        }
                         String problema = leer("Descripción del problema: ");
                         BigDecimal costo = new BigDecimal(leer("Costo de mano de obra (ej. 50000.00): "));
-                        salida.println("Orden creada: " + controlador.crear(vehiculo, tipo, problema, costo));
+                        salida.println("Orden creada: " + controlador.crear(vehiculo, tipo, nombreServicio, problema, costo));
                     }
                     case "2" -> {
                         int id = entero("ID de la orden: ");
@@ -66,6 +76,8 @@ public class MenuOrdenes {
                     }
                     default -> salida.println("Selecciona una opción del menú.");
                 }
+            } catch (NoSuchElementException e) {
+                return;
             } catch (NumberFormatException e) {
                 salida.println("Ingresa un número válido.");
             } catch (IllegalArgumentException | IllegalStateException e) {
@@ -98,13 +110,18 @@ public class MenuOrdenes {
 
     private String leer(String mensaje) {
         salida.print(mensaje);
-        if (!entrada.hasNextLine()) throw new IllegalStateException("Entrada finalizada.");
+        if (!entrada.hasNextLine()) throw new NoSuchElementException("Entrada finalizada.");
         return entrada.nextLine().strip();
     }
 
     private int entero(String mensaje) { return Integer.parseInt(leer(mensaje)); }
 
     private void imprimir(OrdenServicio orden) {
+        String nombre = orden.getNombreServicio();
+        if (nombre == null || nombre.isBlank()) {
+            nombre = "Sin nombre registrado";
+        }
+        salida.println("Servicio: " + nombre);
         salida.printf("Orden %d | Vehículo %d | Tipo %d | Estado %d | Recepción %s | Entrega %s | Mano de obra %s | %s%n",
                 orden.getId(), orden.getVehiculoId(), orden.getMantenimientoTipoId(), orden.getEstadoId(),
                 orden.getFechaRecepcion(), orden.getFechaEntrega(), orden.getCostoManoObra(), orden.getDescripcionProblema());

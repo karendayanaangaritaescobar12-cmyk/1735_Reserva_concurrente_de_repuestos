@@ -21,15 +21,30 @@ public class OrdenServicioServicio {
         this.conexiones = java.util.Objects.requireNonNull(conexiones);
     }
 
+    public int crear(int vehiculo, int tipo, String nombreServicio, String problema,
+                     BigDecimal manoObra) throws SQLException {
+        if (nombreServicio == null || nombreServicio.isBlank() || nombreServicio.strip().length() > 100) {
+            throw new IllegalArgumentException("El nombre del servicio debe tener entre 1 y 100 caracteres.");
+        }
+        return crearOrden(vehiculo, tipo, nombreServicio.strip(), problema, manoObra);
+    }
+
     public int crear(int vehiculo, int tipo, String problema, BigDecimal manoObra) throws SQLException {
+        return crearOrden(vehiculo, tipo, null, problema, manoObra);
+    }
+
+    private int crearOrden(int vehiculo, int tipo, String nombreServicio, String problema,
+                           BigDecimal manoObra) throws SQLException {
         if (vehiculo <= 0 || tipo <= 0) throw new IllegalArgumentException("Vehículo y tipo deben ser positivos.");
         if (problema == null || problema.isBlank()) throw new IllegalArgumentException("Describe el problema.");
         if (manoObra == null || manoObra.signum() < 0 || manoObra.scale() > 2
                 || manoObra.compareTo(new BigDecimal("99999999.99")) > 0)
             throw new IllegalArgumentException("Mano de obra inválida.");
         try (Connection c = conexiones.abrir()) {
-            return ordenes.insertar(c, new OrdenServicio(vehiculo, tipo, problema.strip(), manoObra,
-                    estados.idPorNombre(c, "Pendiente")));
+            OrdenServicio orden = new OrdenServicio(vehiculo, tipo, problema.strip(), manoObra,
+                    estados.idPorNombre(c, "Pendiente"));
+            orden.setNombreServicio(nombreServicio);
+            return ordenes.insertar(c, orden);
         }
     }
 
@@ -78,5 +93,10 @@ public class OrdenServicioServicio {
         try (Connection conexion = conexiones.abrir()) {
             return new TecnicoDao().listar(conexion);
         }
+    }
+
+    public List<String> serviciosSugeridos() {
+        return List.of("Cambio de aceite", "Alineación", "Balanceo", "Revisión de frenos",
+                "Cambio de batería", "Revisión del sistema eléctrico");
     }
 }

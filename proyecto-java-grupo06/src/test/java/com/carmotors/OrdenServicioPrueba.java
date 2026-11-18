@@ -24,11 +24,14 @@ public class OrdenServicioPrueba {
         rechazar(() -> sinBD.crear(1, 1, "Problema", new BigDecimal("-1")));
         rechazar(() -> sinBD.crear(1, 1, "Problema", new BigDecimal("1.001")));
         rechazar(() -> sinBD.crear(1, 1, "Problema", new BigDecimal("100000000")));
+        rechazar(() -> sinBD.crear(1, 1, "", "Problema", BigDecimal.ZERO));
+        rechazar(() -> sinBD.crear(1, 1, "   ", "Problema", BigDecimal.ZERO));
+        rechazar(() -> sinBD.crear(1, 1, "a".repeat(101), "Problema", BigDecimal.ZERO));
         rechazar(() -> sinBD.consultar(0));
         rechazar(() -> sinBD.tecnicosDe(0));
         rechazar(() -> sinBD.asignarTecnico(0, 1));
         rechazar(() -> sinBD.asignarTecnico(1, 0));
-        System.out.println("OK: 11 validaciones sin BD.");
+        System.out.println("OK: 14 validaciones sin BD.");
         if (args.length == 0) return;
         boolean h2 = args[0].equals("--h2");
         if (!h2 && !args[0].equals("--mysql")) throw new IllegalArgumentException("Usa --h2 o --mysql");
@@ -47,11 +50,12 @@ public class OrdenServicioPrueba {
             }
         }
         var servicio = new OrdenServicioServicio(() -> DriverManager.getConnection(url, usuario, clave));
-        int id = servicio.crear(1, 1, "Cambio de aceite", new BigDecimal("50000.00"));
+        int id = servicio.crear(1, 1, "Cambio de aceite", "Mantenimiento del motor", new BigDecimal("50000.00"));
         try {
             var orden = servicio.consultar(id);
             comprobar(orden.getVehiculoId() == 1 && orden.getEstadoId() == 1, "Datos de creación incorrectos");
             comprobar(orden.getDescripcionProblema().equals("Cambio de aceite"), "Descripción incorrecta");
+            comprobar("Cambio de aceite".equals(orden.getNombreServicio()), "Nombre de servicio incorrecto");
             comprobar(orden.getCostoManoObra().compareTo(new BigDecimal("50000.00")) == 0, "Costo incorrecto");
             comprobar(servicio.listar().stream().anyMatch(o -> o.getId() == id), "Falta orden en listado");
             servicio.asignarTecnico(id, 1);

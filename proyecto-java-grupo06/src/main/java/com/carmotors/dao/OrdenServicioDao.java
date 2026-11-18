@@ -9,7 +9,7 @@ import java.util.*;
 public class OrdenServicioDao {
     public int insertar(Connection c, OrdenServicio orden) throws SQLException {
         String sql = "INSERT INTO servicios (vehiculo_id, mantenimiento_tipo_id, fecha_recepcion, "
-                + "descripcion_problema, costo_mano_obra, estado_id) VALUES (?, ?, ?, ?, ?, ?)";
+                + "descripcion_problema, costo_mano_obra, estado_id, nombre_servicio) VALUES (?, ?, ?, ?, ?, ?, ?)";
         try (PreparedStatement p = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
             p.setInt(1, orden.getVehiculoId());
             p.setInt(2, orden.getMantenimientoTipoId());
@@ -17,6 +17,7 @@ public class OrdenServicioDao {
             p.setString(4, orden.getDescripcionProblema());
             p.setBigDecimal(5, orden.getCostoManoObra());
             p.setInt(6, orden.getEstadoId());
+            p.setString(7, orden.getNombreServicio());
             p.executeUpdate();
             try (ResultSet r = p.getGeneratedKeys()) {
                 if (!r.next()) throw new SQLException("No se obtuvo el identificador de la orden.");
@@ -49,6 +50,7 @@ public class OrdenServicioDao {
         OrdenServicio orden = new OrdenServicio(r.getInt("vehiculo_id"), r.getInt("mantenimiento_tipo_id"),
                 r.getString("descripcion_problema"), r.getBigDecimal("costo_mano_obra"), r.getInt("estado_id"));
         orden.setId(r.getInt("id"));
+        orden.setNombreServicio(r.getString("nombre_servicio"));
         orden.setFechaRecepcion(r.getObject("fecha_recepcion", LocalDateTime.class));
         orden.setFechaEntrega(r.getObject("fecha_entrega", LocalDateTime.class));
         return orden;

@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS repuestos (
 );
 
 CREATE TABLE IF NOT EXISTS servicios (
+    nombre_servicio VARCHAR(100),
     id INT AUTO_INCREMENT PRIMARY KEY,
     vehiculo_id INT,
     mantenimiento_tipo_id INT,

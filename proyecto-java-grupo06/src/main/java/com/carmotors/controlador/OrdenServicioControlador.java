@@ -18,6 +18,11 @@ public class OrdenServicioControlador {
         return servicio.crear(vehiculo, tipo, problema, manoObra);
     }
 
+    public int crear(int vehiculo, int tipo, String nombreServicio, String problema,
+                     BigDecimal manoObra) throws SQLException {
+        return servicio.crear(vehiculo, tipo, nombreServicio, problema, manoObra);
+    }
+
     public OrdenServicio consultar(int id) throws SQLException { return servicio.consultar(id); }
     public List<OrdenServicio> listar() throws SQLException { return servicio.listar(); }
     public List<Integer> tecnicosDe(int orden) throws SQLException { return servicio.tecnicosDe(orden); }
@@ -31,5 +36,9 @@ public class OrdenServicioControlador {
 
     public List<Tecnico> listarTecnicos() throws SQLException {
         return servicio.listarTecnicos();
+    }
+
+    public List<String> serviciosSugeridos() {
+        return servicio.serviciosSugeridos();
     }
 }
