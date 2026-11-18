@@ -4,6 +4,7 @@ import com.carmotors.modelo.EvaluacionProveedor;
 import com.carmotors.modelo.Proveedor;
 import com.carmotors.modelo.Repuesto;
 import com.carmotors.modelo.ReservaRepuesto;
+import com.carmotors.modelo.Lote;
 import com.carmotors.servicio.InventarioProveedorServicio;
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -73,5 +74,8 @@ public class InventarioControlador {
 
     public List<ReservaRepuesto> reservasDeServicio(int servicioId) throws SQLException {
         return servicio.reservasDeServicio(servicioId);
+    }
+    public List<Lote> lotesPorRepuesto(int repuestoId) throws SQLException {
+        return servicio.lotesPorRepuesto(repuestoId);
     }
 }
