@@ -1,7 +1,9 @@
 package com.carmotors.vista;
 
 import com.carmotors.controlador.OrdenServicioControlador;
+import com.carmotors.modelo.CicloOrden;
 import com.carmotors.modelo.OrdenServicio;
+import com.carmotors.modelo.ReservaRepuesto;
 import com.carmotors.modelo.Tecnico;
 import java.util.List;
 import java.io.PrintStream;
@@ -25,7 +27,8 @@ public class MenuOrdenes {
     public void mostrar() {
         while (true) {
             salida.println("CarMotors - Órdenes de servicio");
-            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  5. Registrar técnico  6. Listar técnicos  0. Volver");
+            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  5. Registrar técnico  6. Listar técnicos");
+            salida.println("7. Agregar repuesto  8. Ver repuestos de la orden  9. Avanzar estado  0. Volver");
             if (!entrada.hasNextLine()) return;
             String opcion = entrada.nextLine().strip();
             if (opcion.equals("0")) return;
@@ -50,6 +53,7 @@ public class MenuOrdenes {
                     case "2" -> {
                         int id = entero("ID de la orden: ");
                         imprimir(controlador.consultar(id));
+                        salida.println("Estado actual: " + controlador.estadoDe(id));
                         salida.println("Técnicos: " + controlador.tecnicosDe(id));
                     }
                     case "3" -> {
@@ -72,6 +76,30 @@ public class MenuOrdenes {
                         }
                         for (Tecnico tecnico : tecnicos) {
                             salida.println(tecnico.getId() + " | " + tecnico.getNombre());
+                        }
+                    }
+                    case "7" -> {
+                        int orden = entero("ID de la orden: ");
+                        int repuesto = entero("ID del repuesto: ");
+                        int cantidad = entero("Cantidad: ");
+                        controlador.agregarRepuesto(orden, repuesto, cantidad);
+                        salida.println("Repuesto reservado. El stock se descuenta cuando la orden pase a Completado.");
+                    }
+                    case "8" -> {
+                        List<ReservaRepuesto> reservas = controlador.repuestosDe(entero("ID de la orden: "));
+                        if (reservas.isEmpty()) salida.println("La orden no tiene repuestos.");
+                        for (ReservaRepuesto r : reservas) {
+                            salida.println("Repuesto " + r.getRepuestoId() + " | cantidad " + r.getCantidad()
+                                    + " | " + r.getEstado());
+                        }
+                    }
+                    case "9" -> {
+                        int orden = entero("ID de la orden: ");
+                        String nuevo = controlador.avanzarEstado(orden);
+                        salida.println("La orden " + orden + " pasó a '" + nuevo + "'.");
+                        if (nuevo.equals(CicloOrden.COMPLETADO)) {
+                            salida.println("Se descontaron del inventario los repuestos reservados. "
+                                    + "Ya puedes emitir la factura en el menú Facturación.");
                         }
                     }
                     default -> salida.println("Selecciona una opción del menú.");

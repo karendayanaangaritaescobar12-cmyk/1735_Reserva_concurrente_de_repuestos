@@ -8,13 +8,15 @@ public class MenuPrincipal {
 
     private final OrdenServicioControlador ordenes;
     private final MenuInventario inventario;
+    private final MenuFacturacion facturacion;
     private final MenuReportes reportes;
 
     public MenuPrincipal(MenuClientes menuClientes, OrdenServicioControlador ordenes,
-                         MenuInventario inventario, MenuReportes reportes) {
+                         MenuInventario inventario, MenuFacturacion facturacion, MenuReportes reportes) {
         this.menuClientes = menuClientes;
         this.ordenes = ordenes;
         this.inventario = inventario;
+        this.facturacion = facturacion;
         this.reportes = reportes;
     }
 
@@ -25,7 +27,7 @@ public class MenuPrincipal {
                 System.out.println("1. Clientes y vehículos");
                 System.out.println("2. Órdenes de servicio");
                 System.out.println("3. Inventario y proveedores");
-                System.out.println("4. Consultar datos de factura");
+                System.out.println("4. Facturación");
                 System.out.println("5. Reportes gerenciales");
                 System.out.println("0. Salir");
                 System.out.print("Opción: ");
@@ -43,7 +45,7 @@ public class MenuPrincipal {
                         inventario.ejecutar(entrada);
                         break;
                     case "4":
-                        reportes.consultarFactura(entrada);
+                        facturacion.ejecutar(entrada);
                         break;
                     case "5":
                         reportes.ejecutar(entrada);

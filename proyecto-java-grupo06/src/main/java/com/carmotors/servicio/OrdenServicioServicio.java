@@ -1,21 +1,29 @@
 package com.carmotors.servicio;
 
 import com.carmotors.dao.*;
+import com.carmotors.modelo.CicloOrden;
 import com.carmotors.modelo.OrdenServicio;
+import com.carmotors.modelo.ReservaRepuesto;
 import com.carmotors.modelo.Tecnico;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
-/** Creación, consulta y asignación de técnicos a órdenes de servicio. */
+/** Creación, consulta, técnicos, repuestos y ciclo de estados de las órdenes de servicio. */
 public class OrdenServicioServicio {
     @FunctionalInterface
     public interface Conexiones { Connection abrir() throws SQLException; }
+
+    /** Un trabajo que se hace dentro de una transacción. */
+    @FunctionalInterface
+    private interface Trabajo<T> { T hacer(Connection c) throws SQLException; }
 
     private final Conexiones conexiones;
     private final OrdenServicioDao ordenes = new OrdenServicioDao();
     private final EstadoServicioDao estados = new EstadoServicioDao();
     private final TecnicoOrdenDao tecnicos = new TecnicoOrdenDao();
+    private final RepuestoOrdenDao repuestos = new RepuestoOrdenDao();
 
     public OrdenServicioServicio(Conexiones conexiones) {
         this.conexiones = java.util.Objects.requireNonNull(conexiones);
@@ -42,7 +50,7 @@ public class OrdenServicioServicio {
             throw new IllegalArgumentException("Mano de obra inválida.");
         try (Connection c = conexiones.abrir()) {
             OrdenServicio orden = new OrdenServicio(vehiculo, tipo, problema.strip(), manoObra,
-                    estados.idPorNombre(c, "Pendiente"));
+                    estados.idPorNombre(c, CicloOrden.PENDIENTE));
             orden.setNombreServicio(nombreServicio);
             return ordenes.insertar(c, orden);
         }
@@ -98,5 +106,118 @@ public class OrdenServicioServicio {
     public List<String> serviciosSugeridos() {
         return List.of("Cambio de aceite", "Alineación", "Balanceo", "Revisión de frenos",
                 "Cambio de batería", "Revisión del sistema eléctrico");
+    }
+
+    // ------------------------------------------------------------------
+    // Ciclo de estados y repuestos
+    // ------------------------------------------------------------------
+
+    /** Nombre del estado actual de la orden, por ejemplo "En Proceso". */
+    public String estadoDe(int orden) throws SQLException {
+        if (orden <= 0) throw new IllegalArgumentException("Orden inválida.");
+        try (Connection c = conexiones.abrir()) {
+            return nombreEstado(c, ordenes.buscar(c, orden, false));
+        }
+    }
+
+    /**
+     * Aparta (reserva) unidades de un repuesto para la orden. El stock NO baja todavía:
+     * baja una sola vez, cuando la orden pasa a Completado.
+     * Disponible = stock - lo que ya está reservado por otras órdenes.
+     */
+    public void agregarRepuesto(int orden, int repuesto, int cantidad) throws SQLException {
+        if (orden <= 0 || repuesto <= 0) throw new IllegalArgumentException("Orden y repuesto deben ser positivos.");
+        if (cantidad <= 0) throw new IllegalArgumentException("La cantidad debe ser mayor a cero.");
+        enTransaccion(c -> {
+            String estado = nombreEstado(c, ordenes.buscar(c, orden, true));
+            if (!CicloOrden.admiteRepuestos(estado)) {
+                throw new IllegalArgumentException("Solo se agregan repuestos a órdenes Pendiente o En Proceso. "
+                        + "La orden " + orden + " está en '" + estado + "'.");
+            }
+            RepuestoOrdenDao.RepuestoBloqueado datos = repuestos.bloquear(c, repuesto);
+            if (datos.precioVenta() == null) {
+                throw new IllegalArgumentException("El repuesto '" + datos.nombre() + "' no tiene precio de venta.");
+            }
+            int disponible = datos.stock() - repuestos.totalReservado(c, repuesto);
+            if (cantidad > disponible) {
+                throw new IllegalArgumentException(String.format(
+                        "Stock insuficiente de '%s'. Pediste %d y hay %d disponibles (stock %d, ya reservado %d).",
+                        datos.nombre(), cantidad, Math.max(disponible, 0), datos.stock(), datos.stock() - disponible));
+            }
+            repuestos.reservar(c, orden, repuesto, cantidad);
+            return null;
+        });
+    }
+
+    /** Reservas de la orden con su estado: RESERVADO, DESCONTADO o CANCELADO. */
+    public List<ReservaRepuesto> repuestosDe(int orden) throws SQLException {
+        if (orden <= 0) throw new IllegalArgumentException("Orden inválida.");
+        try (Connection c = conexiones.abrir()) {
+            ordenes.buscar(c, orden, false);
+            return repuestos.reservasDe(c, orden);
+        }
+    }
+
+    /**
+     * Pasa la orden a su estado siguiente y devuelve el nombre del estado nuevo.
+     * Al llegar a Completado descuenta del stock lo reservado (una sola vez).
+     * El paso a Facturado no se hace aquí: lo hace FacturaServicio al emitir la factura.
+     */
+    public String avanzarEstado(int orden) throws SQLException {
+        if (orden <= 0) throw new IllegalArgumentException("Orden inválida.");
+        return enTransaccion(c -> {
+            OrdenServicio datos = ordenes.buscar(c, orden, true);
+            String actual = nombreEstado(c, datos);
+            String siguiente = CicloOrden.siguiente(actual).orElseThrow(() -> new IllegalArgumentException(
+                    "La orden " + orden + " está en '" + actual + "' y ya no puede avanzar."));
+            if (siguiente.equals(CicloOrden.FACTURADO)) {
+                throw new IllegalArgumentException("La orden " + orden + " está Completado. "
+                        + "Para pasarla a Facturado emite la factura en el menú Facturación.");
+            }
+            aplicar(c, orden, siguiente);
+            return siguiente;
+        });
+    }
+
+    /**
+     * Pasa una orden de Completado a Facturado usando la transacción que abrió facturación,
+     * para que la factura y el cambio de estado se guarden juntos o no se guarde ninguno.
+     */
+    public void marcarFacturada(Connection c, int orden) throws SQLException {
+        String actual = nombreEstado(c, ordenes.buscar(c, orden, true));
+        if (!actual.equals(CicloOrden.COMPLETADO)) {
+            throw new IllegalArgumentException("La orden " + orden + " está en '" + actual
+                    + "'. Solo se factura cuando está 'Completado'.");
+        }
+        aplicar(c, orden, CicloOrden.FACTURADO);
+    }
+
+    private void aplicar(Connection c, int orden, String nuevo) throws SQLException {
+        if (nuevo.equals(CicloOrden.COMPLETADO)) {
+            for (ReservaRepuesto reserva : repuestos.reservasActivas(c, orden)) {
+                repuestos.descontar(c, reserva);
+            }
+        }
+        LocalDateTime entrega = nuevo.equals(CicloOrden.ENTREGADO) ? LocalDateTime.now() : null;
+        ordenes.actualizarEstado(c, orden, estados.idPorNombre(c, nuevo), entrega);
+    }
+
+    private String nombreEstado(Connection c, OrdenServicio orden) throws SQLException {
+        return estados.buscar(c, orden.getEstadoId()).getNombre();
+    }
+
+    /** Abre una conexión, hace el trabajo y confirma. Si algo falla, deshace todo (rollback). */
+    private <T> T enTransaccion(Trabajo<T> trabajo) throws SQLException {
+        try (Connection c = conexiones.abrir()) {
+            c.setAutoCommit(false);
+            try {
+                T resultado = trabajo.hacer(c);
+                c.commit();
+                return resultado;
+            } catch (SQLException | RuntimeException e) {
+                try { c.rollback(); } catch (SQLException rollback) { e.addSuppressed(rollback); }
+                throw e;
+            }
+        }
     }
 }

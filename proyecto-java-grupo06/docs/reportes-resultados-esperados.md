@@ -11,8 +11,12 @@ Módulo de reportes de CarMotors.
 | `controlador/ReporteControlador.java` | Recibe las fechas que escribe el usuario y llama al servicio (día 3) |
 | `modelo/DatosFactura.java` | Datos que se le entregan a facturación (día 3) |
 | `dao/FacturaDao.java` | Lee de MySQL los datos de la factura de una orden (día 3) |
+| `modelo/Factura.java` | Calcula el IVA y el total final de la factura (día 4) |
+| `servicio/FacturaServicio.java` | Emite la factura: la guarda, pasa la orden a Facturado y escribe el `.txt` (día 4) |
+| `servicio/FacturaTexto.java` | Arma el texto de la factura (día 4) |
+| `vista/MenuFacturacion.java` | Menú de facturación: vista previa, emitir y volver a generar el `.txt` (día 4) |
 | `database/data.sql` | Datos de prueba. Se puede ejecutar varias veces |
-| `test/.../ReportesDia2Prueba.java` y `ReportesDia3Prueba.java` | Pruebas |
+| `test/.../ReportesDia2Prueba.java`, `ReportesDia3Prueba.java` y `CicloFacturaPrueba.java` | Pruebas |
 
 ## Reglas
 
@@ -82,17 +86,21 @@ Módulo de reportes de CarMotors.
 - `getManoObra()` → va en la columna `total_mano_obra`
 - `getSubtotal()` → repuestos + mano de obra, la base para calcular los impuestos
 
-Facturación calcula los impuestos y el total final, y después cambia la orden a `Facturado`.
+`FacturaServicio` calcula el IVA (19 %) y el total final, guarda la factura en `facturas`,
+cambia la orden a `Facturado` en la misma transacción y escribe el `.txt` en la carpeta `facturas/`.
 
-**Para acordar con el equipo:** hoy nadie guarda en la tabla `servicios_repuestos` los repuestos que se usan desde la app. Sin eso, el consumo y la factura solo muestran los datos de prueba.
+Los repuestos que se agregan a una orden desde la app (menú de órdenes, opción 7) se guardan en
+`servicios_repuestos` cuando la orden pasa a `Completado`. Desde ese momento salen en la factura
+y en el reporte de consumo.
 
 ## Cómo probar
 
-```powershell
-# Sin MySQL
-.\scripts\verificar-reportes.ps1
+Desde IntelliJ, ejecuta el `main` de `ReportesDia2Prueba`, `ReportesDia3Prueba` y `CicloFacturaPrueba`.
 
-# Con MySQL (en una base nueva: schema.sql y data.sql)
-$env:CARMOTORS_DB_PASSWORD = "tu_clave"
-.\scripts\verificar-reportes.ps1 -Integracion -MySqlJar C:\ruta\mysql-connector-j-8.4.0.jar
-```
+- **Sin argumentos:** cálculos y validaciones, sin base de datos.
+- **Con `--mysql`** (en *Program arguments*): en una base nueva, carga `schema.sql` y después
+  `data.sql`.
+  Configura `CARMOTORS_DB_URL`, `CARMOTORS_DB_USER` y `CARMOTORS_DB_PASSWORD` en *Environment variables*.
+
+Corre primero las pruebas de reportes y después `CicloFacturaPrueba`: esta crea órdenes con la
+fecha de hoy y cambiaría los conteos de octubre y noviembre de 2026.
