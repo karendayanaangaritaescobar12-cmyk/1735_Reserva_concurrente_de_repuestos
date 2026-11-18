@@ -1,6 +1,7 @@
 package com.carmotors.vista;
 
 import com.carmotors.controlador.ClienteControlador;
+import com.carmotors.excepcion.CampoInvalidoException;
 import com.carmotors.modelo.HistorialVehiculo;
 import com.carmotors.servicio.HistorialClienteServicio.Recordatorio;
 import java.util.List;
@@ -56,17 +57,56 @@ public class MenuClientes {
     }
 
     private void registrarCliente(Scanner entrada) throws SQLException {
-        clientes.registrarCliente(leer(entrada, "Nombre"), leer(entrada, "Documento"),
-                leer(entrada, "Teléfono (opcional)"), leer(entrada, "Correo"));
-        System.out.println("Cliente registrado.");
+        String[] campos = {"Nombre", "Documento", "Teléfono", "Correo"};
+        String[] datos = leerFormulario(entrada, campos);
+        while (true) {
+            try {
+                clientes.registrarCliente(datos[0], datos[1], datos[2], datos[3]);
+                System.out.println("Cliente registrado.");
+                return;
+            } catch (CampoInvalidoException e) {
+                corregirCampo(entrada, campos, datos, e);
+            }
+        }
     }
 
     private void registrarVehiculo(Scanner entrada) throws SQLException {
-        clientes.registrarVehiculo(leer(entrada, "Documento del cliente"), leer(entrada, "Placa"),
-                leer(entrada, "Marca"), leer(entrada, "Modelo"));
-        System.out.println("Vehículo registrado.");
+        String[] campos = {"Documento", "Placa", "Marca", "Modelo"};
+        String[] datos = leerFormulario(entrada, campos);
+        while (true) {
+            try {
+                clientes.registrarVehiculo(datos[0], datos[1], datos[2], datos[3]);
+                System.out.println("Vehículo registrado.");
+                return;
+            } catch (CampoInvalidoException e) {
+                corregirCampo(entrada, campos, datos, e);
+            }
+        }
     }
 
+    private String[] leerFormulario(Scanner entrada, String[] campos) {
+        String[] datos = new String[campos.length];
+        for (int i = 0; i < campos.length; i++) {
+            String etiqueta = campos[i];
+            if (etiqueta.equals("Teléfono")) {
+                etiqueta += " (opcional)";
+            }
+            datos[i] = leer(entrada, etiqueta);
+        }
+        return datos;
+    }
+
+    private void corregirCampo(Scanner entrada, String[] campos, String[] datos,
+                               CampoInvalidoException error) {
+        System.out.println(error.getMessage());
+        for (int i = 0; i < campos.length; i++) {
+            if (campos[i].equals(error.getCampo())) {
+                datos[i] = leer(entrada, campos[i]);
+                return;
+            }
+        }
+        throw error;
+    }
     private void historial(Scanner entrada) throws SQLException {
         List<HistorialVehiculo> vehiculos = clientes.historial(leer(entrada, "Documento del cliente"));
         if (vehiculos.isEmpty()) System.out.println("No se encontraron vehículos para ese documento.");
