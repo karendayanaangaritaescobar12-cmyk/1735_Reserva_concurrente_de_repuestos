@@ -45,8 +45,6 @@ Requisitos: JDK 17 o superior, Maven y MySQL Server 8.
    ```sql
    SOURCE database/schema.sql;
    SOURCE database/data.sql;
-   SOURCE database/schema_lotes_evaluaciones.sql;
-   SOURCE database/schema_reservas.sql;
    ```
    Estos scripts se ejecutan una vez sobre una base nueva; no son una migración
    para una base que ya contiene las tablas.
@@ -67,7 +65,7 @@ Requisitos: JDK 17 o superior, Maven y MySQL Server 8.
 Compila las clases de prueba con `mvn test-compile` y ejecuta sus métodos `main` desde el IDE. Las clases ejecutables son `com.carmotors.OrdenServicioPrueba`, `com.carmotors.ReportesDia2Prueba` y `com.carmotors.ReportesDia3Prueba`.
 
 - Sin argumentos, las pruebas cubren validaciones de órdenes, cálculos de reportes y datos de facturación sin abrir conexiones.
-- Con `--mysql`, usa una base exclusiva de pruebas y las variables de conexión indicadas arriba. Para reportes, carga `database/reportes_datos_prueba.sql` después de `database/data.sql`. Consulta los [resultados esperados](docs/reportes-resultados-esperados.md).
+- Con `--mysql`, usa una base exclusiva de pruebas y las variables de conexión indicadas arriba. Los datos de reportes están incluidos en `database/data.sql`. Consulta los [resultados esperados](docs/reportes-resultados-esperados.md).
 - El modo `--h2` de órdenes falla al cargar `schema.sql` porque H2 rechaza la sentencia MySQL `CREATE DATABASE`.
 
 Se verificó la compilación con compatibilidad Java 17 y pasaron las tres pruebas sin base de datos. La ejecución contra MySQL queda pendiente.

@@ -101,7 +101,7 @@ public class ReportesDia3Prueba {
     }
 
     /**
-     * Usa una base de datos nueva con: schema.sql, schema_ordenes.sql, data.sql y reportes_datos_prueba.sql.
+     * Usa una base de datos nueva con: schema.sql y data.sql.
      * Si se crean otras órdenes en octubre o noviembre de 2026, los números cambian.
      */
     private static void probarConMySQL() throws Exception {

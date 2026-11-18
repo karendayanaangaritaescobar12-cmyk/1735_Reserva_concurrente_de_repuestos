@@ -71,7 +71,7 @@ public class ReportesDia2Prueba {
         System.out.println("MySQL - consumo: " + real.consumoRepuestos(desde, hasta));
     }
 
-    /** Los mismos datos que database/reportes_datos_prueba.sql, más una orden fuera del periodo. */
+    /** Los mismos datos que database/data.sql, más una orden fuera del periodo. */
     private static class DatosEnMemoria implements FuenteReportes {
         public List<ServicioReporte> servicios() {
             return List.of(

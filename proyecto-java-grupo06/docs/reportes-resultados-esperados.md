@@ -11,7 +11,7 @@ Módulo de reportes de CarMotors.
 | `controlador/ReporteControlador.java` | Recibe las fechas que escribe el usuario y llama al servicio (día 3) |
 | `modelo/DatosFactura.java` | Datos que se le entregan a facturación (día 3) |
 | `dao/FacturaDao.java` | Lee de MySQL los datos de la factura de una orden (día 3) |
-| `database/reportes_datos_prueba.sql` | Datos de prueba. Se puede ejecutar varias veces |
+| `database/data.sql` | Datos de prueba. Se puede ejecutar varias veces |
 | `test/.../ReportesDia2Prueba.java` y `ReportesDia3Prueba.java` | Pruebas |
 
 ## Reglas
@@ -92,7 +92,7 @@ Facturación calcula los impuestos y el total final, y después cambia la orden 
 # Sin MySQL
 .\scripts\verificar-reportes.ps1
 
-# Con MySQL (en una base nueva: schema.sql, schema_ordenes.sql, data.sql, reportes_datos_prueba.sql)
+# Con MySQL (en una base nueva: schema.sql y data.sql)
 $env:CARMOTORS_DB_PASSWORD = "tu_clave"
 .\scripts\verificar-reportes.ps1 -Integracion -MySqlJar C:\ruta\mysql-connector-j-8.4.0.jar
 ```
