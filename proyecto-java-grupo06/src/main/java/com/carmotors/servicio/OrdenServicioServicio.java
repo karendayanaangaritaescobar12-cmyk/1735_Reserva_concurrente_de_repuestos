@@ -2,6 +2,7 @@ package com.carmotors.servicio;
 
 import com.carmotors.dao.*;
 import com.carmotors.modelo.OrdenServicio;
+import com.carmotors.modelo.Tecnico;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.List;
@@ -61,6 +62,21 @@ public class OrdenServicioServicio {
                 try { c.rollback(); } catch (SQLException rollback) { e.addSuppressed(rollback); }
                 throw e;
             }
+        }
+    }
+
+    public int registrarTecnico(String nombre) throws SQLException {
+        if (nombre == null || nombre.trim().isEmpty() || nombre.trim().length() > 255) {
+            throw new IllegalArgumentException("El nombre del técnico debe tener entre 1 y 255 caracteres.");
+        }
+        try (Connection conexion = conexiones.abrir()) {
+            return new TecnicoDao().insertar(conexion, nombre.trim());
+        }
+    }
+
+    public List<Tecnico> listarTecnicos() throws SQLException {
+        try (Connection conexion = conexiones.abrir()) {
+            return new TecnicoDao().listar(conexion);
         }
     }
 }

@@ -77,12 +77,12 @@ CREATE TABLE IF NOT EXISTS facturas (
     FOREIGN KEY (servicio_id) REFERENCES servicios(id)
 );
 
-CREATE TABLE tecnicos (
+CREATE TABLE IF NOT EXISTS tecnicos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE servicios_tecnicos (
+CREATE TABLE IF NOT EXISTS servicios_tecnicos (
     servicio_id INT NOT NULL,
     tecnico_id INT NOT NULL,
     PRIMARY KEY (servicio_id, tecnico_id),

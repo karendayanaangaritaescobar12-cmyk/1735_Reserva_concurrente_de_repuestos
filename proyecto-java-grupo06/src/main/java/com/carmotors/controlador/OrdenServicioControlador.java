@@ -1,6 +1,7 @@
 package com.carmotors.controlador;
 
 import com.carmotors.modelo.OrdenServicio;
+import com.carmotors.modelo.Tecnico;
 import com.carmotors.servicio.OrdenServicioServicio;
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -22,5 +23,13 @@ public class OrdenServicioControlador {
     public List<Integer> tecnicosDe(int orden) throws SQLException { return servicio.tecnicosDe(orden); }
     public void asignarTecnico(int orden, int tecnico) throws SQLException {
         servicio.asignarTecnico(orden, tecnico);
+    }
+
+    public int registrarTecnico(String nombre) throws SQLException {
+        return servicio.registrarTecnico(nombre);
+    }
+
+    public List<Tecnico> listarTecnicos() throws SQLException {
+        return servicio.listarTecnicos();
     }
 }

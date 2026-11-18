@@ -1,6 +1,19 @@
 package com.carmotors;
 
 import com.carmotors.config.ConexionFactory;
+import com.carmotors.controlador.InventarioControlador;
+import com.carmotors.controlador.ReporteControlador;
+import com.carmotors.dao.JdbcProveedorDao;
+import com.carmotors.dao.JdbcRepuestoDao;
+import com.carmotors.dao.LoteDao;
+import com.carmotors.dao.EvaluacionProveedorDao;
+import com.carmotors.dao.ReservaRepuestoDao;
+import com.carmotors.dao.ReporteDao;
+import com.carmotors.dao.FacturaDao;
+import com.carmotors.servicio.ReporteServicio;
+import com.carmotors.servicio.InventarioProveedorServicio;
+import com.carmotors.vista.MenuReportes;
+import com.carmotors.vista.MenuInventario;
 import com.carmotors.controlador.ClienteControlador;
 import com.carmotors.controlador.OrdenServicioControlador;
 import com.carmotors.servicio.OrdenServicioServicio;
@@ -19,6 +32,10 @@ public class Main {
         HistorialClienteServicio consultas = new HistorialClienteServicio(new HistorialClienteDao());
         ClienteControlador clientes = new ClienteControlador(registro, new RegistroVehiculoServicio(new VehiculoDao()), consultas);
         OrdenServicioServicio ordenes = new OrdenServicioServicio(ConexionFactory.getInstancia()::abrir);
-        new MenuPrincipal(new MenuClientes(clientes), new OrdenServicioControlador(ordenes)).ejecutar();
+        InventarioProveedorServicio inventario = new InventarioProveedorServicio(new JdbcProveedorDao(),
+                new JdbcRepuestoDao(), new LoteDao(), new EvaluacionProveedorDao(), new ReservaRepuestoDao());
+        ReporteControlador reportes = new ReporteControlador(new ReporteServicio(new ReporteDao()), new FacturaDao());
+        new MenuPrincipal(new MenuClientes(clientes), new OrdenServicioControlador(ordenes),
+                new MenuInventario(new InventarioControlador(inventario)), new MenuReportes(reportes)).ejecutar();
     }
 }

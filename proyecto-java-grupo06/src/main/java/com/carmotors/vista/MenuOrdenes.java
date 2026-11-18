@@ -2,6 +2,8 @@ package com.carmotors.vista;
 
 import com.carmotors.controlador.OrdenServicioControlador;
 import com.carmotors.modelo.OrdenServicio;
+import com.carmotors.modelo.Tecnico;
+import java.util.List;
 import java.io.PrintStream;
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -22,7 +24,7 @@ public class MenuOrdenes {
     public void mostrar() {
         while (true) {
             salida.println("CarMotors - Órdenes de servicio");
-            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  0. Volver");
+            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  5. Registrar técnico  6. Listar técnicos  0. Volver");
             if (!entrada.hasNextLine()) return;
             String opcion = entrada.nextLine().strip();
             if (opcion.equals("0")) return;
@@ -49,6 +51,19 @@ public class MenuOrdenes {
                         controlador.asignarTecnico(entero("ID de la orden: "), entero("ID del técnico: "));
                         salida.println("Técnico asignado.");
                     }
+                    case "5" -> {
+                        int id = controlador.registrarTecnico(leer("Nombre del técnico: "));
+                        salida.println("Técnico registrado con ID: " + id);
+                    }
+                    case "6" -> {
+                        List<Tecnico> tecnicos = controlador.listarTecnicos();
+                        if (tecnicos.isEmpty()) {
+                            salida.println("No hay técnicos registrados.");
+                        }
+                        for (Tecnico tecnico : tecnicos) {
+                            salida.println(tecnico.getId() + " | " + tecnico.getNombre());
+                        }
+                    }
                     default -> salida.println("Selecciona una opción del menú.");
                 }
             } catch (NumberFormatException e) {
@@ -56,7 +71,27 @@ public class MenuOrdenes {
             } catch (IllegalArgumentException | IllegalStateException e) {
                 salida.println(e.getMessage());
             } catch (SQLException e) {
-                salida.println("No se pudo realizar la operación. Revisa la conexión y los identificadores registrados.");
+                salida.println("No se pudo realizar la operación. Código MySQL: " + e.getErrorCode()
+                        + " | Estado SQL: " + e.getSQLState());
+                switch (e.getErrorCode()) {
+                    case 1045:
+                        salida.println("Revisa el usuario y la contraseña de la conexión.");
+                        break;
+                    case 1049:
+                        salida.println("La base de datos configurada no existe.");
+                        break;
+                    case 1146:
+                        salida.println("Falta una tabla. Ejecuta los scripts de estructura en la base configurada.");
+                        break;
+                    case 1452:
+                        salida.println("Un ID relacionado no existe. Comprueba vehículo, mantenimiento, orden y técnico según la operación.");
+                        break;
+                    case 1062:
+                        salida.println("Ya existe un registro con esos datos únicos.");
+                        break;
+                    default:
+                        salida.println("Revisa la conexión y el esquema de la base. Estado SQL: " + e.getSQLState());
+                }
             }
         }
     }
