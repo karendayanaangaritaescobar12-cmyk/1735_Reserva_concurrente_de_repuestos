@@ -1,4 +1,4 @@
-package vista;
+package com.carmotors.vista;
 
 import com.carmotors.controlador.InventarioControlador;
 import com.carmotors.modelo.EvaluacionProveedor;
