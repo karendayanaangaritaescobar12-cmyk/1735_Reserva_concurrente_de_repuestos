@@ -1,13 +1,19 @@
 package com.carmotors.servicio;
 
 import com.carmotors.dao.*;
+import com.carmotors.modelo.EstadoServicio;
 import com.carmotors.modelo.OrdenServicio;
+import com.carmotors.modelo.RepuestoOrden;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.List;
 
-/** Creación, consulta y asignación de técnicos a órdenes de servicio. */
+/** Gestiona las órdenes de servicio, sus técnicos y su ciclo de vida. */
 public class OrdenServicioServicio {
+    private static final List<String> CICLO = List.of(
+            "Pendiente", "En Proceso", "Completado", "Facturado", "Entregado");
+
     @FunctionalInterface
     public interface Conexiones { Connection abrir() throws SQLException; }
 
@@ -15,6 +21,8 @@ public class OrdenServicioServicio {
     private final OrdenServicioDao ordenes = new OrdenServicioDao();
     private final EstadoServicioDao estados = new EstadoServicioDao();
     private final TecnicoOrdenDao tecnicos = new TecnicoOrdenDao();
+    private final RepuestoOrdenDao repuestos = new RepuestoOrdenDao();
+    private final InventarioOrdenDao inventario = new InventarioOrdenDao();
 
     public OrdenServicioServicio(Conexiones conexiones) {
         this.conexiones = java.util.Objects.requireNonNull(conexiones);
@@ -41,6 +49,65 @@ public class OrdenServicioServicio {
         try (Connection c = conexiones.abrir()) { return ordenes.listar(c); }
     }
 
+    public List<EstadoServicio> listarEstados() throws SQLException {
+        try (Connection c = conexiones.abrir()) { return estados.listar(c); }
+    }
+
+    public EstadoServicio cambiarEstado(int id, int estadoId) throws SQLException {
+        if (id <= 0 || estadoId <= 0) {
+            throw new IllegalArgumentException("Orden y estado deben ser positivos.");
+        }
+        return enTransaccion(c -> {
+            OrdenServicio orden = ordenes.buscar(c, id, true);
+            EstadoServicio actual = estados.buscar(c, orden.getEstadoId());
+            EstadoServicio destino = estados.buscar(c, estadoId);
+            int paso = CICLO.indexOf(actual.getNombre());
+            if (paso < 0 || paso + 1 == CICLO.size() || !CICLO.get(paso + 1).equals(destino.getNombre())) {
+                throw new IllegalArgumentException("Cambio de estado inválido de " + actual.getNombre()
+                        + " a " + destino.getNombre() + ".");
+            }
+            LocalDateTime entrega = "Entregado".equals(destino.getNombre()) ? LocalDateTime.now() : null;
+            if ("Completado".equals(destino.getNombre())) {
+                for (RepuestoOrden repuesto : repuestos.listar(c, id)) {
+                    inventario.descontarReserva(c, repuesto);
+                }
+            }
+            if (!ordenes.actualizarEstado(c, id, actual.getId(), destino.getId(), entrega)) {
+                throw new IllegalStateException("La orden cambió. Consulta su estado y vuelve a intentarlo.");
+            }
+            return destino;
+        });
+    }
+
+    public List<RepuestoOrden> repuestosDe(int orden) throws SQLException {
+        if (orden <= 0) throw new IllegalArgumentException("Orden inválida.");
+        try (Connection c = conexiones.abrir()) {
+            ordenes.buscar(c, orden, false);
+            return repuestos.listar(c, orden);
+        }
+    }
+
+    public void asignarRepuesto(int orden, int repuesto, int cantidad) throws SQLException {
+        if (orden <= 0 || repuesto <= 0 || cantidad <= 0) {
+            throw new IllegalArgumentException("Orden, repuesto y cantidad deben ser positivos.");
+        }
+        enTransaccion(c -> {
+            OrdenServicio actual = ordenes.buscar(c, orden, true);
+            String estado = estados.buscar(c, actual.getEstadoId()).getNombre();
+            if (!"Pendiente".equals(estado) && !"En Proceso".equals(estado)) {
+                throw new IllegalArgumentException("Solo se pueden asignar repuestos a órdenes pendientes o en proceso.");
+            }
+            if (repuestos.listar(c, orden).stream().anyMatch(item -> item.repuestoId() == repuesto)) {
+                throw new IllegalArgumentException("Ese repuesto ya está asignado a la orden.");
+            }
+            if (!inventario.reservar(c, repuesto, cantidad)) {
+                throw new IllegalArgumentException("Repuesto inexistente o stock disponible insuficiente.");
+            }
+            repuestos.insertar(c, orden, repuesto, cantidad);
+            return null;
+        });
+    }
+
     public List<Integer> tecnicosDe(int orden) throws SQLException {
         if (orden <= 0) throw new IllegalArgumentException("Orden inválida.");
         try (Connection c = conexiones.abrir()) {
@@ -51,12 +118,25 @@ public class OrdenServicioServicio {
 
     public void asignarTecnico(int orden, int tecnico) throws SQLException {
         if (orden <= 0 || tecnico <= 0) throw new IllegalArgumentException("Orden y técnico deben ser positivos.");
+        enTransaccion(c -> {
+            ordenes.buscar(c, orden, true);
+            if (!tecnicos.listar(c, orden).contains(tecnico)) tecnicos.asignar(c, orden, tecnico);
+            return null;
+        });
+    }
+
+    @FunctionalInterface
+    private interface Operacion<T> {
+        T ejecutar(Connection c) throws SQLException;
+    }
+
+    private <T> T enTransaccion(Operacion<T> operacion) throws SQLException {
         try (Connection c = conexiones.abrir()) {
             c.setAutoCommit(false);
             try {
-                ordenes.buscar(c, orden, true);
-                if (!tecnicos.listar(c, orden).contains(tecnico)) tecnicos.asignar(c, orden, tecnico);
+                T resultado = operacion.ejecutar(c);
                 c.commit();
+                return resultado;
             } catch (SQLException | RuntimeException e) {
                 try { c.rollback(); } catch (SQLException rollback) { e.addSuppressed(rollback); }
                 throw e;

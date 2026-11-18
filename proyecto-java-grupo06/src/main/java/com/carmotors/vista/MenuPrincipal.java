@@ -22,7 +22,8 @@ public class MenuPrincipal {
     public void mostrar() {
         while (true) {
             salida.println("CarMotors - Órdenes de servicio");
-            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  0. Salir");
+            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  5. Cambiar estado");
+            salida.println("6. Asignar repuesto  0. Salir");
             if (!entrada.hasNextLine()) return;
             String opcion = entrada.nextLine().strip();
             if (opcion.equals("0")) return;
@@ -39,6 +40,10 @@ public class MenuPrincipal {
                         int id = entero("ID de la orden: ");
                         imprimir(controlador.consultar(id));
                         salida.println("Técnicos: " + controlador.tecnicosDe(id));
+                        var repuestos = controlador.repuestosDe(id);
+                        if (repuestos.isEmpty()) salida.println("Sin repuestos asignados.");
+                        repuestos.forEach(item -> salida.printf("Repuesto %d | Cantidad %d | Precio unitario %s%n",
+                                item.repuestoId(), item.cantidad(), item.precioUnitario()));
                     }
                     case "3" -> {
                         var ordenes = controlador.listar();
@@ -48,6 +53,18 @@ public class MenuPrincipal {
                     case "4" -> {
                         controlador.asignarTecnico(entero("ID de la orden: "), entero("ID del técnico: "));
                         salida.println("Técnico asignado.");
+                    }
+                    case "5" -> {
+                        int orden = entero("ID de la orden: ");
+                        controlador.listarEstados().forEach(estado ->
+                                salida.printf("%d. %s%n", estado.getId(), estado.getNombre()));
+                        var estado = controlador.cambiarEstado(orden, entero("ID del nuevo estado: "));
+                        salida.println("Nuevo estado: " + estado.getNombre());
+                    }
+                    case "6" -> {
+                        controlador.asignarRepuesto(entero("ID de la orden: "), entero("ID del repuesto: "),
+                                entero("Cantidad: "));
+                        salida.println("Repuesto reservado.");
                     }
                     default -> salida.println("Selecciona una opción del menú.");
                 }

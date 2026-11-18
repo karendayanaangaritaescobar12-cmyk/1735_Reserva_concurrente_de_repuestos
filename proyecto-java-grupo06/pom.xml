@@ -49,6 +49,9 @@
                                 <include>com/carmotors/dao/OrdenServicioDao.java</include>
                                 <include>com/carmotors/dao/EstadoServicioDao.java</include>
                                 <include>com/carmotors/dao/TecnicoOrdenDao.java</include>
+                                <include>com/carmotors/dao/InventarioOrdenDao.java</include>
+                                <include>com/carmotors/dao/RepuestoOrdenDao.java</include>
+                                <include>com/carmotors/modelo/RepuestoOrden.java</include>
                                 <include>com/carmotors/servicio/OrdenServicioServicio.java</include>
                             </includes>
                         </configuration>

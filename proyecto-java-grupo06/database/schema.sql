@@ -32,3 +32,32 @@ CREATE TABLE servicios_tecnicos (
     FOREIGN KEY (servicio_id) REFERENCES servicios(id),
     FOREIGN KEY (tecnico_id) REFERENCES tecnicos(id)
 ) ENGINE=InnoDB;
+
+CREATE TABLE repuesto_tipos (
+    id INT AUTO_INCREMENT PRIMARY KEY, nombre VARCHAR(100) UNIQUE NOT NULL
+) ENGINE=InnoDB;
+
+CREATE TABLE proveedores (
+    id INT AUTO_INCREMENT PRIMARY KEY, nombre VARCHAR(255) NOT NULL, contacto VARCHAR(255)
+) ENGINE=InnoDB;
+
+CREATE TABLE repuestos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(255) NOT NULL, marca VARCHAR(100),
+    repuesto_tipo_id INT, proveedor_id INT,
+    precio_compra DECIMAL(10,2), precio_venta DECIMAL(10,2) NOT NULL,
+    cantidad_stock INT NOT NULL, stock_minimo INT NOT NULL,
+    cantidad_reservada INT NOT NULL DEFAULT 0,
+    CHECK (cantidad_reservada >= 0 AND cantidad_reservada <= cantidad_stock),
+    FOREIGN KEY (repuesto_tipo_id) REFERENCES repuesto_tipos(id),
+    FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
+) ENGINE=InnoDB;
+
+CREATE TABLE servicios_repuestos (
+    servicio_id INT NOT NULL, repuesto_id INT NOT NULL,
+    cantidad_usada INT NOT NULL CHECK (cantidad_usada > 0),
+    precio_unitario_venta DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (servicio_id, repuesto_id),
+    FOREIGN KEY (servicio_id) REFERENCES servicios(id),
+    FOREIGN KEY (repuesto_id) REFERENCES repuestos(id)
+) ENGINE=InnoDB;

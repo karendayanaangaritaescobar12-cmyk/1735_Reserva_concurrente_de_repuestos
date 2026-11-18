@@ -45,6 +45,19 @@ public class OrdenServicioDao {
         return List.copyOf(resultado);
     }
 
+    public boolean actualizarEstado(Connection c, int id, int estadoActual, int estadoNuevo,
+                                    LocalDateTime fechaEntrega) throws SQLException {
+        String sql = "UPDATE servicios SET estado_id = ?, fecha_entrega = COALESCE(?, fecha_entrega) "
+                + "WHERE id = ? AND estado_id = ?";
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setInt(1, estadoNuevo);
+            p.setObject(2, fechaEntrega, Types.TIMESTAMP);
+            p.setInt(3, id);
+            p.setInt(4, estadoActual);
+            return p.executeUpdate() == 1;
+        }
+    }
+
     private OrdenServicio mapear(ResultSet r) throws SQLException {
         OrdenServicio orden = new OrdenServicio(r.getInt("vehiculo_id"), r.getInt("mantenimiento_tipo_id"),
                 r.getString("descripcion_problema"), r.getBigDecimal("costo_mano_obra"), r.getInt("estado_id"));
