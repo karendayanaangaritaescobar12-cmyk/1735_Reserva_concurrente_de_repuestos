@@ -1,7 +1,6 @@
 package com.carmotors.controlador;
 
 import com.carmotors.modelo.EvaluacionProveedor;
-import com.carmotors.modelo.Lote;
 import com.carmotors.modelo.Proveedor;
 import com.carmotors.modelo.Repuesto;
 import com.carmotors.modelo.ReservaRepuesto;
