@@ -24,7 +24,7 @@ los conteos de las pruebas de reportes.
 
 | # | Clase | Resultado esperado | Resultado (18-11-2026) |
 |---|---|---|---|
-| 1 | `ReportesDia2Prueba --mysql` | Reportes por tipo, estado, mes, productividad y consumo | ✅ OK |
+| 1 | `ReportesDia2Prueba --mysql` | Reportes por nombre de servicio, tipo, estado, mes, productividad y consumo | ✅ OK (sin el reporte por nombre; falta repetir) |
 | 2 | `ReportesDia3Prueba --mysql` | Datos de factura de la orden "batería descargada": subtotal 410.000 | ✅ OK |
 | 3 | `CicloFacturaPrueba --mysql` | Reservas, ciclo, stock, factura, `.txt` y entrega | ✅ OK |
 | 4 | `OrdenServicioPrueba --mysql` | Creación, técnicos, rollback y consola | ✅ OK |

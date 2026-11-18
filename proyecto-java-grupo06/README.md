@@ -16,7 +16,7 @@ Java 17, MySQL 8, JDBC, Maven y consola.
 | **Órdenes de servicio** | 2 | Crear, consultar y listar órdenes; registrar y asignar técnicos; agregar repuestos a la orden y avanzar su estado. |
 | **Inventario y proveedores** | 3 | Catálogo de repuestos y proveedores, lotes con caducidad, evaluación de proveedores y alertas de stock bajo. |
 | **Facturación** | 4 | Vista previa, emisión de la factura en `.txt` (con IVA del 19 %) y regeneración del archivo. |
-| **Reportes gerenciales** | 5 | Servicios más solicitados, productividad por técnico y consumo de repuestos en un periodo. |
+| **Reportes gerenciales** | 5 | Servicios más solicitados (por nombre, como «Cambio de aceite»), productividad por técnico y consumo de repuestos en un periodo. |
 
 ## Ciclo de una orden
 

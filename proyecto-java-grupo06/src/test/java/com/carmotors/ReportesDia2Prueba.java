@@ -29,9 +29,10 @@ public class ReportesDia2Prueba {
             public List<RepuestoUsado> repuestosUsados() { throw new AssertionError("No debe leer datos"); }
         });
         rechazar(() -> sinBD.serviciosPorTipo(null, HASTA));
+        rechazar(() -> sinBD.serviciosPorNombre(HASTA, DESDE));
         rechazar(() -> sinBD.productividadPorTecnico(DESDE, null));
         rechazar(() -> sinBD.consumoRepuestos(HASTA, DESDE));
-        System.out.println("OK: 3 validaciones de periodo.");
+        System.out.println("OK: 4 validaciones de periodo.");
 
         ReporteServicio reportes = new ReporteServicio(new DatosEnMemoria());
 
@@ -45,6 +46,34 @@ public class ReportesDia2Prueba {
         comprobar(reportes.serviciosPorTipo(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))
                 .equals(Map.of("Preventivo", 1L)), "Filtro de periodo");
         System.out.println("OK: servicios solicitados.");
+
+        // 1b. Servicios por nombre: de más a menos; con la misma cantidad, en el orden de la lista;
+        // los de la lista sin órdenes salen con 0
+        comprobar(reportes.serviciosPorNombre(DESDE, HASTA).toString().equals("{Revisión de frenos=2, "
+                + "Cambio de aceite=1, Alineación=1, Cambio de batería=1, Balanceo=0, "
+                + "Revisión del sistema eléctrico=0}"), "Servicios por nombre: " + reportes.serviciosPorNombre(DESDE, HASTA));
+        comprobar(reportes.serviciosPorNombre(LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 30))
+                .entrySet().iterator().next().equals(Map.entry("Balanceo", 1L)), "Por nombre: filtro de periodo");
+
+        // Órdenes sin nombre y con un nombre que no está en la lista: van a grupos aparte, al final
+        ReporteServicio especiales = new ReporteServicio(new FuenteReportes() {
+            public List<ServicioReporte> servicios() {
+                LocalDateTime dia = LocalDateTime.of(2026, 10, 1, 8, 0);
+                return List.of(
+                        new ServicioReporte(1, "Preventivo", "Cambio de aceite", "Pendiente", dia),
+                        new ServicioReporte(2, "Preventivo", null, "Pendiente", dia),
+                        new ServicioReporte(3, "Preventivo", " ", "Pendiente", dia),
+                        new ServicioReporte(4, "Correctivo", "Pintura", "Pendiente", dia));
+            }
+            public List<AsignacionTecnico> asignaciones() { return List.of(); }
+            public List<RepuestoUsado> repuestosUsados() { return List.of(); }
+        });
+        Map<String, Long> porNombre = especiales.serviciosPorNombre(DESDE, HASTA);
+        comprobar(porNombre.get(ReporteServicio.SIN_NOMBRE) == 2L && porNombre.get(ReporteServicio.OTRO) == 1L
+                && porNombre.get("Cambio de aceite") == 1L && porNombre.size() == 8, "Grupos especiales: " + porNombre);
+        comprobar(List.copyOf(porNombre.keySet()).subList(0, 2).equals(List.of(ReporteServicio.SIN_NOMBRE,
+                "Cambio de aceite")), "Orden de grupos especiales: " + porNombre);
+        System.out.println("OK: servicios por nombre " + reportes.serviciosPorNombre(DESDE, HASTA));
 
         // 2. Productividad: Ana 2/2, Luis 2/3, Mario 0/1 (Luis no suma la orden 6, fuera del periodo)
         List<ProductividadTecnico> productividad = reportes.productividadPorTecnico(DESDE, HASTA);
@@ -64,6 +93,7 @@ public class ReportesDia2Prueba {
         if (args.length == 0 || !args[0].equals("--mysql")) return;
         ReporteServicio real = new ReporteServicio(new ReporteDao());
         LocalDate desde = LocalDate.of(2000, 1, 1), hasta = LocalDate.now().plusYears(1);
+        System.out.println("MySQL - por nombre: " + real.serviciosPorNombre(desde, hasta));
         System.out.println("MySQL - por tipo: " + real.serviciosPorTipo(desde, hasta));
         System.out.println("MySQL - por estado: " + real.serviciosPorEstado(desde, hasta));
         System.out.println("MySQL - por mes: " + real.serviciosPorMes(desde, hasta));
@@ -75,12 +105,12 @@ public class ReportesDia2Prueba {
     private static class DatosEnMemoria implements FuenteReportes {
         public List<ServicioReporte> servicios() {
             return List.of(
-                    new ServicioReporte(1, "Preventivo", "Entregado", LocalDateTime.of(2026, 10, 5, 8, 0)),
-                    new ServicioReporte(2, "Correctivo", "Facturado", LocalDateTime.of(2026, 10, 12, 9, 30)),
-                    new ServicioReporte(3, "Correctivo", "Completado", LocalDateTime.of(2026, 10, 20, 14, 0)),
-                    new ServicioReporte(4, "Preventivo", "En Proceso", LocalDateTime.of(2026, 11, 3, 10, 0)),
-                    new ServicioReporte(5, "Correctivo", "Pendiente", LocalDateTime.of(2026, 11, 10, 16, 45)),
-                    new ServicioReporte(6, "Preventivo", "Entregado", LocalDateTime.of(2026, 9, 15, 8, 0)));
+                    new ServicioReporte(1, "Preventivo", "Cambio de aceite", "Entregado", LocalDateTime.of(2026, 10, 5, 8, 0)),
+                    new ServicioReporte(2, "Correctivo", "Revisión de frenos", "Facturado", LocalDateTime.of(2026, 10, 12, 9, 30)),
+                    new ServicioReporte(3, "Correctivo", "Cambio de batería", "Completado", LocalDateTime.of(2026, 10, 20, 14, 0)),
+                    new ServicioReporte(4, "Preventivo", "Revisión de frenos", "En Proceso", LocalDateTime.of(2026, 11, 3, 10, 0)),
+                    new ServicioReporte(5, "Correctivo", "Alineación", "Pendiente", LocalDateTime.of(2026, 11, 10, 16, 45)),
+                    new ServicioReporte(6, "Preventivo", "Balanceo", "Entregado", LocalDateTime.of(2026, 9, 15, 8, 0)));
         }
 
         public List<AsignacionTecnico> asignaciones() {

@@ -1,6 +1,7 @@
 package com.carmotors.servicio;
 
 import com.carmotors.dao.*;
+import com.carmotors.modelo.CatalogoServicios;
 import com.carmotors.modelo.CicloOrden;
 import com.carmotors.modelo.OrdenServicio;
 import com.carmotors.modelo.ReservaRepuesto;
@@ -31,10 +32,12 @@ public class OrdenServicioServicio {
 
     public int crear(int vehiculo, int tipo, String nombreServicio, String problema,
                      BigDecimal manoObra) throws SQLException {
-        if (nombreServicio == null || nombreServicio.isBlank() || nombreServicio.strip().length() > 100) {
-            throw new IllegalArgumentException("El nombre del servicio debe tener entre 1 y 100 caracteres.");
+        String nombre = nombreServicio == null ? null : nombreServicio.strip();
+        if (!CatalogoServicios.contiene(nombre)) {
+            throw new IllegalArgumentException("Elige un servicio de la lista: "
+                    + String.join(", ", CatalogoServicios.NOMBRES) + ".");
         }
-        return crearOrden(vehiculo, tipo, nombreServicio.strip(), problema, manoObra);
+        return crearOrden(vehiculo, tipo, nombre, problema, manoObra);
     }
 
     public int crear(int vehiculo, int tipo, String problema, BigDecimal manoObra) throws SQLException {
@@ -103,9 +106,9 @@ public class OrdenServicioServicio {
         }
     }
 
+    /** La lista vive en CatalogoServicios para que órdenes y reportes usen la misma. */
     public List<String> serviciosSugeridos() {
-        return List.of("Cambio de aceite", "Alineación", "Balanceo", "Revisión de frenos",
-                "Cambio de batería", "Revisión del sistema eléctrico");
+        return CatalogoServicios.NOMBRES;
     }
 
     // ------------------------------------------------------------------

@@ -37,15 +37,7 @@ public class MenuOrdenes {
                     case "1" -> {
                         int vehiculo = entero("ID del vehículo: ");
                         int tipo = entero("ID del tipo de mantenimiento: ");
-                        salida.println("Servicios sugeridos:");
-                        for (String nombre : controlador.serviciosSugeridos()) {
-                            salida.println("- " + nombre);
-                        }
-                        String nombreServicio = leer("Escribe el nombre del servicio que necesitas: ");
-                        while (nombreServicio.isBlank() || nombreServicio.length() > 100) {
-                            salida.println("Escribe un nombre de entre 1 y 100 caracteres.");
-                            nombreServicio = leer("Nombre del servicio: ");
-                        }
+                        String nombreServicio = elegirServicio();
                         String problema = leer("Descripción del problema: ");
                         BigDecimal costo = new BigDecimal(leer("Costo de mano de obra (ej. 50000.00): "));
                         salida.println("Orden creada: " + controlador.crear(vehiculo, tipo, nombreServicio, problema, costo));
@@ -143,6 +135,27 @@ public class MenuOrdenes {
     }
 
     private int entero(String mensaje) { return Integer.parseInt(leer(mensaje)); }
+
+    /** Muestra la lista numerada y pide el número hasta que sea válido. */
+    private String elegirServicio() {
+        List<String> servicios = controlador.serviciosSugeridos();
+        salida.println("Servicios:");
+        for (int i = 0; i < servicios.size(); i++) {
+            salida.printf("%d. %s%n", i + 1, servicios.get(i));
+        }
+        while (true) {
+            String texto = leer("Número del servicio: ");
+            try {
+                int numero = Integer.parseInt(texto);
+                if (numero >= 1 && numero <= servicios.size()) {
+                    return servicios.get(numero - 1);
+                }
+            } catch (NumberFormatException e) {
+                // se vuelve a pedir abajo
+            }
+            salida.println("Elige un número entre 1 y " + servicios.size() + ".");
+        }
+    }
 
     private void imprimir(OrdenServicio orden) {
         String nombre = orden.getNombreServicio();

@@ -6,7 +6,8 @@ Módulo de reportes de CarMotors.
 
 | Archivo | Para qué sirve |
 |---|---|
-| `servicio/ReporteServicio.java` | Calcula los 3 reportes con Streams (día 2) |
+| `servicio/ReporteServicio.java` | Calcula los 3 reportes con Streams (día 2). Servicios más solicitados por nombre (día 5) |
+| `modelo/CatalogoServicios.java` | La lista de servicios que se pueden pedir; la comparten órdenes y reportes (día 5) |
 | `dao/ReporteDao.java` | Lee de MySQL las órdenes, técnicos y repuestos (día 2) |
 | `controlador/ReporteControlador.java` | Recibe las fechas que escribe el usuario y llama al servicio (día 3) |
 | `modelo/DatosFactura.java` | Datos que se le entregan a facturación (día 3) |
@@ -24,19 +25,37 @@ Módulo de reportes de CarMotors.
 - Se usa la fecha en que se recibió la orden.
 - Una orden está **terminada** si su estado es `Completado`, `Facturado` o `Entregado`.
 - Una orden sin tipo o sin estado sale como `Sin tipo` / `Sin estado`.
+- **Servicios más solicitados** cuenta por el nombre del servicio, que siempre es uno de la lista
+  `modelo/CatalogoServicios` (en el menú de órdenes se elige por número). Sale de más a menos; con la
+  misma cantidad, en el orden de la lista. Los servicios de la lista sin órdenes salen con 0.
+- Una orden sin nombre (creada antes de la lista) sale como `Sin nombre (órdenes antiguas)`, y una con
+  un nombre que no está en la lista, como `Otro (fuera de la lista)`. Esos dos grupos solo aparecen si hay órdenes.
 - Solo se factura una orden en estado `Completado`.
 
 ## Datos de prueba
 
-| Orden | Fecha | Tipo | Estado | Técnicos | Repuestos | Mano de obra |
-|---|---|---|---|---|---|---|
-| Reporte: cambio de aceite | 2026-10-05 | Preventivo | Entregado | Luis | — | 45.000 |
-| Reporte: cambio de pastillas | 2026-10-12 | Correctivo | Facturado | Luis, Ana | 2 pastillas × 95.000 | 80.000 |
-| Reporte: batería descargada | 2026-10-20 | Correctivo | Completado | Ana | 1 batería × 380.000 | 30.000 |
-| Reporte: revisión general | 2026-11-03 | Preventivo | En Proceso | Luis | 1 pastilla × 95.000 | 60.000 |
-| Reporte: ruido en la suspensión | 2026-11-10 | Correctivo | Pendiente | Mario | — | 50.000 |
+| Orden | Servicio | Fecha | Tipo | Estado | Técnicos | Repuestos | Mano de obra |
+|---|---|---|---|---|---|---|---|
+| Reporte: cambio de aceite | Cambio de aceite | 2026-10-05 | Preventivo | Entregado | Luis | — | 45.000 |
+| Reporte: cambio de pastillas | Revisión de frenos | 2026-10-12 | Correctivo | Facturado | Luis, Ana | 2 pastillas × 95.000 | 80.000 |
+| Reporte: batería descargada | Cambio de batería | 2026-10-20 | Correctivo | Completado | Ana | 1 batería × 380.000 | 30.000 |
+| Reporte: revisión general | Revisión de frenos | 2026-11-03 | Preventivo | En Proceso | Luis | 1 pastilla × 95.000 | 60.000 |
+| Reporte: ruido en la suspensión | Alineación | 2026-11-10 | Correctivo | Pendiente | Mario | — | 50.000 |
 
 ## Resultados esperados (del 2026-10-01 al 2026-11-30)
+
+**Servicios más solicitados (menú de reportes, opción 1)**
+
+| Servicio | Órdenes |
+|---|---|
+| Revisión de frenos | 2 |
+| Cambio de aceite | 1 |
+| Alineación | 1 |
+| Cambio de batería | 1 |
+| Balanceo | 0 |
+| Revisión del sistema eléctrico | 0 |
+
+Total: 5 órdenes.
 
 **Servicios por tipo:** Correctivo 3, Preventivo 2
 
