@@ -95,7 +95,7 @@ Compila las clases de prueba con `mvn test-compile` y ejecuta sus métodos `main
 - **Con `--mysql`:** usa una base exclusiva de pruebas con `schema.sql` y `data.sql` (que ya trae los
   datos de reportes). Corre primero las pruebas de reportes y después `CicloFacturaPrueba`,
   porque esta crea órdenes con la fecha actual.
-- El modo `--h2` de órdenes falla al cargar `schema.sql` porque H2 rechaza la sentencia MySQL `CREATE DATABASE`.
+- Ejecuta `OrdenServicioPrueba --h2` desde la carpeta del proyecto con H2 2.3.232 en el classpath. Comprueba la creación de órdenes, asignaciones y reintentos de consola con una base en memoria.
 
 Las cinco pruebas pasan sin base de datos. `OrdenServicioPrueba`, `ReportesDia2Prueba`, `ReportesDia3Prueba`
 y `CicloFacturaPrueba` también pasan con `--mysql` contra MySQL 8.0 (base nueva con los scripts anteriores). También se recorrió el flujo completo desde la consola:

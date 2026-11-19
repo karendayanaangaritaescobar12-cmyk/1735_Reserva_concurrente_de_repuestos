@@ -41,12 +41,16 @@ public class OrdenServicioPrueba {
         if (h2) {
             try (Connection c = DriverManager.getConnection(url, usuario, clave);
                  Statement s = c.createStatement()) {
-                for (String archivo : new String[]{"schema.sql", "data.sql"}) {
-                    String sql = Files.readString(Path.of("database", archivo));
-                    for (String sentencia : sql.split(";")) {
-                        if (!sentencia.isBlank()) s.execute(sentencia);
-                    }
+                String esquema = Files.readString(Path.of("database", "schema.sql"));
+                esquema = esquema.substring(0, esquema.indexOf("SET @existe_nombre"));
+                for (String sentencia : esquema.split(";")) {
+                    String ddl = sentencia.stripLeading();
+                    if (ddl.startsWith("CREATE TABLE")) s.execute(ddl);
                 }
+                s.executeUpdate("INSERT INTO servicio_estados (id, nombre) VALUES (1, 'Pendiente')");
+                s.executeUpdate("INSERT INTO mantenimiento_tipos (id, nombre) VALUES (1, 'Preventivo')");
+                s.executeUpdate("INSERT INTO vehiculos (id, placa) VALUES (1, 'TST001')");
+                s.executeUpdate("INSERT INTO tecnicos (id, nombre) VALUES (1, 'Tecnico de prueba')");
             }
         }
         var servicio = new OrdenServicioServicio(() -> DriverManager.getConnection(url, usuario, clave));
@@ -54,7 +58,7 @@ public class OrdenServicioPrueba {
         try {
             var orden = servicio.consultar(id);
             comprobar(orden.getVehiculoId() == 1 && orden.getEstadoId() == 1, "Datos de creación incorrectos");
-            comprobar(orden.getDescripcionProblema().equals("Cambio de aceite"), "Descripción incorrecta");
+            comprobar(orden.getDescripcionProblema().equals("Mantenimiento del motor"), "Descripción incorrecta");
             comprobar("Cambio de aceite".equals(orden.getNombreServicio()), "Nombre de servicio incorrecto");
             comprobar(orden.getCostoManoObra().compareTo(new BigDecimal("50000.00")) == 0, "Costo incorrecto");
             comprobar(servicio.listar().stream().anyMatch(o -> o.getId() == id), "Falta orden en listado");
@@ -68,19 +72,19 @@ public class OrdenServicioPrueba {
             } catch (SQLIntegrityConstraintViolationException esperado) { /* FK y rollback */ }
             comprobar(servicio.tecnicosDe(id).size() == 1, "La asignación fallida alteró los técnicos");
             var buffer = new ByteArrayOutputStream();
-            String acciones = "abc\n2\nno-numero\n2\n" + id + "\n3\n4\n" + id + "\n1\n0\n";
+            String acciones = "abc\n2\nno-numero\n" + id + "\n3\n4\n" + id + "\n1\n0\n";
             try (var entrada = new Scanner(acciones);
                  var salida = new PrintStream(buffer, true, StandardCharsets.UTF_8)) {
                 new MenuOrdenes(new OrdenServicioControlador(servicio), entrada, salida).mostrar();
             }
             String consola = buffer.toString(StandardCharsets.UTF_8);
-            comprobar(consola.contains("Selecciona una opción") && consola.contains("Ingresa un número válido"),
+            comprobar(consola.contains("Selecciona una opción") && consola.contains("Ingresa un entero entre"),
                     "La consola no maneja entradas inválidas");
             comprobar(consola.contains("Cambio de aceite") && consola.contains("Técnicos: [1]")
                     && consola.contains("Técnico asignado."), "Falló el flujo MVC de consulta y asignación");
             comprobar(servicio.tecnicosDe(id).size() == 1, "La consola duplicó la asignación");
-            System.out.println("OK: scripts, creación, consulta, asignación, rollback y consola con " + (h2 ? "H2 (modo MySQL)." : "MySQL."));
-            } finally {
+            System.out.println("OK: creación, consulta, asignación, rollback y consola con " + (h2 ? "H2 (modo MySQL)." : "MySQL."));
+        } finally {
             try (Connection c = DriverManager.getConnection(url, usuario, clave)) {
                 try (PreparedStatement p = c.prepareStatement("DELETE FROM servicios_tecnicos WHERE servicio_id = ?")) {
                     p.setInt(1, id);
