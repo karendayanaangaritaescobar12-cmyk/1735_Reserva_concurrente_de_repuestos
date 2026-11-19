@@ -18,9 +18,9 @@ WHERE c.documento_identidad = 'DEMO01'
   AND NOT EXISTS (SELECT 1 FROM vehiculos WHERE placa = 'ABC123');
 
 INSERT INTO servicios (vehiculo_id, mantenimiento_tipo_id, fecha_recepcion, fecha_entrega,
-                       descripcion_problema, costo_mano_obra, estado_id)
+                       descripcion_problema, costo_mano_obra, estado_id, nombre_servicio)
 SELECT v.id, t.id, CURRENT_DATE - INTERVAL 8 MONTH, CURRENT_DATE - INTERVAL 7 MONTH,
-       'Cambio de aceite de prueba', 45000, e.id
+       'Cambio de aceite de prueba', 45000, e.id, 'Cambio de aceite'
 FROM vehiculos v
 JOIN mantenimiento_tipos t ON t.nombre = 'Preventivo'
 JOIN servicio_estados e ON e.nombre = 'Entregado'
@@ -117,29 +117,43 @@ SET @bateria   = (SELECT MIN(id) FROM repuestos WHERE nombre = 'Batería 12V');
 
 -- Órdenes de servicio (la descripción "Reporte: ..." identifica cada orden de prueba)
 INSERT INTO servicios (vehiculo_id, mantenimiento_tipo_id, fecha_recepcion, fecha_entrega,
-                       descripcion_problema, costo_mano_obra, estado_id)
-SELECT @v1, @preventivo, '2026-10-05 08:00', '2026-10-06 17:00', 'Reporte: cambio de aceite', 45000, @entregado
+                       descripcion_problema, costo_mano_obra, estado_id, nombre_servicio)
+SELECT @v1, @preventivo, '2026-10-05 08:00', '2026-10-06 17:00', 'Reporte: cambio de aceite', 45000, @entregado, 'Cambio de aceite'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM servicios WHERE descripcion_problema = 'Reporte: cambio de aceite');
 
 INSERT INTO servicios (vehiculo_id, mantenimiento_tipo_id, fecha_recepcion, fecha_entrega,
-                       descripcion_problema, costo_mano_obra, estado_id)
-SELECT @v2, @correctivo, '2026-10-12 09:30', '2026-10-14 12:00', 'Reporte: cambio de pastillas', 80000, @facturado
+                       descripcion_problema, costo_mano_obra, estado_id, nombre_servicio)
+SELECT @v2, @correctivo, '2026-10-12 09:30', '2026-10-14 12:00', 'Reporte: cambio de pastillas', 80000, @facturado, 'Revisión de frenos'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM servicios WHERE descripcion_problema = 'Reporte: cambio de pastillas');
 
 INSERT INTO servicios (vehiculo_id, mantenimiento_tipo_id, fecha_recepcion, fecha_entrega,
-                       descripcion_problema, costo_mano_obra, estado_id)
-SELECT @v3, @correctivo, '2026-10-20 14:00', NULL, 'Reporte: batería descargada', 30000, @completado
+                       descripcion_problema, costo_mano_obra, estado_id, nombre_servicio)
+SELECT @v3, @correctivo, '2026-10-20 14:00', NULL, 'Reporte: batería descargada', 30000, @completado, 'Cambio de batería'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM servicios WHERE descripcion_problema = 'Reporte: batería descargada');
 
 INSERT INTO servicios (vehiculo_id, mantenimiento_tipo_id, fecha_recepcion, fecha_entrega,
-                       descripcion_problema, costo_mano_obra, estado_id)
-SELECT @v1, @preventivo, '2026-11-03 10:00', NULL, 'Reporte: revisión general', 60000, @proceso
+                       descripcion_problema, costo_mano_obra, estado_id, nombre_servicio)
+SELECT @v1, @preventivo, '2026-11-03 10:00', NULL, 'Reporte: revisión general', 60000, @proceso, 'Revisión de frenos'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM servicios WHERE descripcion_problema = 'Reporte: revisión general');
 
 INSERT INTO servicios (vehiculo_id, mantenimiento_tipo_id, fecha_recepcion, fecha_entrega,
-                       descripcion_problema, costo_mano_obra, estado_id)
-SELECT @v2, @correctivo, '2026-11-10 16:45', NULL, 'Reporte: ruido en la suspensión', 50000, @pendiente
+                       descripcion_problema, costo_mano_obra, estado_id, nombre_servicio)
+SELECT @v2, @correctivo, '2026-11-10 16:45', NULL, 'Reporte: ruido en la suspensión', 50000, @pendiente, 'Alineación'
 FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM servicios WHERE descripcion_problema = 'Reporte: ruido en la suspensión');
+
+-- Bases cargadas antes de que existiera nombre_servicio: se les pone el nombre a las órdenes de prueba
+UPDATE servicios SET nombre_servicio = CASE descripcion_problema
+        WHEN 'Cambio de aceite de prueba'      THEN 'Cambio de aceite'
+        WHEN 'Reporte: cambio de aceite'       THEN 'Cambio de aceite'
+        WHEN 'Reporte: cambio de pastillas'    THEN 'Revisión de frenos'
+        WHEN 'Reporte: batería descargada'     THEN 'Cambio de batería'
+        WHEN 'Reporte: revisión general'       THEN 'Revisión de frenos'
+        WHEN 'Reporte: ruido en la suspensión' THEN 'Alineación'
+    END
+WHERE nombre_servicio IS NULL
+  AND descripcion_problema IN ('Cambio de aceite de prueba', 'Reporte: cambio de aceite',
+      'Reporte: cambio de pastillas', 'Reporte: batería descargada', 'Reporte: revisión general',
+      'Reporte: ruido en la suspensión');
 
 SET @s1 = (SELECT MIN(id) FROM servicios WHERE descripcion_problema = 'Reporte: cambio de aceite');
 SET @s2 = (SELECT MIN(id) FROM servicios WHERE descripcion_problema = 'Reporte: cambio de pastillas');

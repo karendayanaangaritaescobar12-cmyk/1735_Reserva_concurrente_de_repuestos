@@ -4,6 +4,7 @@ import com.carmotors.controlador.ReporteControlador;
 import com.carmotors.modelo.DatosFactura;
 import com.carmotors.modelo.RepuestoUsado;
 import java.sql.SQLException;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
 
@@ -40,7 +41,7 @@ public class MenuReportes {
                 String hasta = fin.toString();
                 switch (opcion) {
                     case "1":
-                        mostrar(reportes.serviciosPorTipo(desde, hasta).entrySet());
+                        mostrarServicios(reportes.serviciosPorNombre(desde, hasta));
                         break;
                     case "2":
                         mostrar(reportes.productividadPorTecnico(desde, hasta));
@@ -81,6 +82,16 @@ public class MenuReportes {
         } catch (SQLException e) {
             System.out.println("Error de MySQL. Código: " + e.getErrorCode());
         }
+    }
+
+    private void mostrarServicios(Map<String, Long> conteo) {
+        long total = conteo.values().stream().mapToLong(Long::longValue).sum();
+        if (total == 0) {
+            System.out.println("No hay resultados para ese período.");
+            return;
+        }
+        conteo.forEach((servicio, cantidad) -> System.out.printf("%-32s %d%n", servicio, cantidad));
+        System.out.println("Total de órdenes: " + total);
     }
 
     private void mostrar(Iterable<?> resultados) {

@@ -1,8 +1,7 @@
 package com.carmotors.controlador;
 
-import com.carmotors.modelo.EstadoServicio;
 import com.carmotors.modelo.OrdenServicio;
-import com.carmotors.modelo.RepuestoOrden;
+import com.carmotors.modelo.ReservaRepuesto;
 import com.carmotors.modelo.Tecnico;
 import com.carmotors.servicio.OrdenServicioServicio;
 import java.math.BigDecimal;
@@ -27,15 +26,7 @@ public class OrdenServicioControlador {
 
     public OrdenServicio consultar(int id) throws SQLException { return servicio.consultar(id); }
     public List<OrdenServicio> listar() throws SQLException { return servicio.listar(); }
-    public List<EstadoServicio> listarEstados() throws SQLException { return servicio.listarEstados(); }
-    public EstadoServicio cambiarEstado(int orden, int estado) throws SQLException {
-        return servicio.cambiarEstado(orden, estado);
-    }
     public List<Integer> tecnicosDe(int orden) throws SQLException { return servicio.tecnicosDe(orden); }
-    public List<RepuestoOrden> repuestosDe(int orden) throws SQLException { return servicio.repuestosDe(orden); }
-    public void asignarRepuesto(int orden, int repuesto, int cantidad) throws SQLException {
-        servicio.asignarRepuesto(orden, repuesto, cantidad);
-    }
     public void asignarTecnico(int orden, int tecnico) throws SQLException {
         servicio.asignarTecnico(orden, tecnico);
     }
@@ -51,4 +42,14 @@ public class OrdenServicioControlador {
     public List<String> serviciosSugeridos() {
         return servicio.serviciosSugeridos();
     }
+
+    public String estadoDe(int orden) throws SQLException { return servicio.estadoDe(orden); }
+
+    public void agregarRepuesto(int orden, int repuesto, int cantidad) throws SQLException {
+        servicio.agregarRepuesto(orden, repuesto, cantidad);
+    }
+
+    public List<ReservaRepuesto> repuestosDe(int orden) throws SQLException { return servicio.repuestosDe(orden); }
+
+    public String avanzarEstado(int orden) throws SQLException { return servicio.avanzarEstado(orden); }
 }

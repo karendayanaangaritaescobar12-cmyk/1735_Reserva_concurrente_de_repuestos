@@ -46,16 +46,20 @@ public class OrdenServicioDao {
         return List.copyOf(resultado);
     }
 
-    public boolean actualizarEstado(Connection c, int id, int estadoActual, int estadoNuevo,
-                                    LocalDateTime fechaEntrega) throws SQLException {
-        String sql = "UPDATE servicios SET estado_id = ?, fecha_entrega = COALESCE(?, fecha_entrega) "
-                + "WHERE id = ? AND estado_id = ?";
+    /** Cambia el estado de la orden. Si fechaEntrega no es null, también la guarda (al pasar a Entregado). */
+    public void actualizarEstado(Connection c, int id, int estadoId, LocalDateTime fechaEntrega) throws SQLException {
+        String sql = fechaEntrega == null
+                ? "UPDATE servicios SET estado_id = ? WHERE id = ?"
+                : "UPDATE servicios SET estado_id = ?, fecha_entrega = ? WHERE id = ?";
         try (PreparedStatement p = c.prepareStatement(sql)) {
-            p.setInt(1, estadoNuevo);
-            p.setObject(2, fechaEntrega, Types.TIMESTAMP);
-            p.setInt(3, id);
-            p.setInt(4, estadoActual);
-            return p.executeUpdate() == 1;
+            p.setInt(1, estadoId);
+            if (fechaEntrega == null) {
+                p.setInt(2, id);
+            } else {
+                p.setObject(2, fechaEntrega);
+                p.setInt(3, id);
+            }
+            if (p.executeUpdate() != 1) throw new SQLException("No se actualizó la orden " + id);
         }
     }
 

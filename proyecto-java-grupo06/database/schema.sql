@@ -38,7 +38,6 @@ CREATE TABLE IF NOT EXISTS repuestos (
     precio_venta DECIMAL(10, 2),
     cantidad_stock INT NOT NULL,
     stock_minimo INT NOT NULL,
-    cantidad_reservada INT NOT NULL DEFAULT 0,
     FOREIGN KEY (repuesto_tipo_id) REFERENCES repuesto_tipos(id),
     FOREIGN KEY (proveedor_id) REFERENCES proveedores(id)
 );
@@ -62,7 +61,6 @@ CREATE TABLE IF NOT EXISTS servicios_repuestos ( -- Tabla de unión para la rela
     servicio_id INT,
     repuesto_id INT,
     cantidad_usada INT NOT NULL,
-    reserva_pendiente BOOLEAN NOT NULL DEFAULT FALSE,
     precio_unitario_venta DECIMAL(10, 2) NOT NULL,
     PRIMARY KEY (servicio_id, repuesto_id),
     FOREIGN KEY (servicio_id) REFERENCES servicios(id),
@@ -126,6 +124,7 @@ CREATE TABLE IF NOT EXISTS reservas_repuesto (
                                                  servicio_id    INT NOT NULL,
                                                  cantidad       INT NOT NULL,
                                                  estado         VARCHAR(20) NOT NULL DEFAULT 'RESERVADO',
+    precio_unitario_venta DECIMAL(10,2),
     fecha_reserva  DATETIME NOT NULL,
     FOREIGN KEY (repuesto_id) REFERENCES repuestos(id),
     INDEX idx_reservas_servicio (servicio_id),
@@ -147,21 +146,16 @@ PREPARE actualizar_nombre FROM @sql_nombre;
 EXECUTE actualizar_nombre;
 DEALLOCATE PREPARE actualizar_nombre;
 
--- Las asignaciones hist?ricas se conservan como consumos ya registrados.
-SET @sql_reservas = IF(
-    EXISTS (SELECT 1 FROM information_schema.columns
-            WHERE table_schema = DATABASE() AND table_name = 'repuestos'
-              AND column_name = 'cantidad_reservada'),
-    'SELECT 1', 'ALTER TABLE repuestos ADD COLUMN cantidad_reservada INT NOT NULL DEFAULT 0');
-PREPARE actualizar_reservas FROM @sql_reservas;
-EXECUTE actualizar_reservas;
-DEALLOCATE PREPARE actualizar_reservas;
 
-SET @sql_asignaciones = IF(
-    EXISTS (SELECT 1 FROM information_schema.columns
-            WHERE table_schema = DATABASE() AND table_name = 'servicios_repuestos'
-              AND column_name = 'reserva_pendiente'),
-    'SELECT 1', 'ALTER TABLE servicios_repuestos ADD COLUMN reserva_pendiente BOOLEAN NOT NULL DEFAULT FALSE');
-PREPARE actualizar_asignaciones FROM @sql_asignaciones;
-EXECUTE actualizar_asignaciones;
-DEALLOCATE PREPARE actualizar_asignaciones;
+-- Conserva el precio al reservar, también en bases creadas anteriormente.
+SET @existe_precio_reserva = (
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'reservas_repuesto'
+      AND column_name = 'precio_unitario_venta'
+);
+SET @sql_precio_reserva = IF(@existe_precio_reserva = 0,
+    'ALTER TABLE reservas_repuesto ADD COLUMN precio_unitario_venta DECIMAL(10,2)',
+    'SELECT ''La columna de precio de reserva ya existe'' AS resultado');
+PREPARE actualizar_precio_reserva FROM @sql_precio_reserva;
+EXECUTE actualizar_precio_reserva;
+DEALLOCATE PREPARE actualizar_precio_reserva;

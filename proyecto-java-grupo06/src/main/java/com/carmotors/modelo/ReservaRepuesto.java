@@ -1,6 +1,7 @@
 package com.carmotors.modelo;
 
 import java.time.LocalDateTime;
+import java.math.BigDecimal;
 
 public class ReservaRepuesto {
 
@@ -9,6 +10,7 @@ public class ReservaRepuesto {
     }
 
     private int id;
+    private BigDecimal precioUnitarioVenta;
     private int repuestoId;
     private int servicioId;
     private int cantidad;
@@ -25,6 +27,9 @@ public class ReservaRepuesto {
         this.estado = EstadoReserva.RESERVADO;
         this.fechaReserva = LocalDateTime.now();
     }
+
+    public BigDecimal getPrecioUnitarioVenta() { return precioUnitarioVenta; }
+    public void setPrecioUnitarioVenta(BigDecimal precio) { precioUnitarioVenta = precio; }
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

@@ -1,7 +1,9 @@
 package com.carmotors.vista;
 
 import com.carmotors.controlador.OrdenServicioControlador;
+import com.carmotors.modelo.CicloOrden;
 import com.carmotors.modelo.OrdenServicio;
+import com.carmotors.modelo.ReservaRepuesto;
 import com.carmotors.modelo.Tecnico;
 import java.util.List;
 import java.io.PrintStream;
@@ -25,7 +27,8 @@ public class MenuOrdenes {
     public void mostrar() {
         while (true) {
             salida.println("CarMotors - Órdenes de servicio");
-            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  5. Registrar técnico  6. Listar técnicos  7. Cambiar estado  8. Asignar repuesto  0. Volver");
+            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  5. Registrar técnico  6. Listar técnicos");
+            salida.println("7. Agregar repuesto  8. Ver repuestos de la orden  9. Avanzar estado  0. Volver");
             if (!entrada.hasNextLine()) return;
             String opcion = entrada.nextLine().strip();
             if (opcion.equals("0")) return;
@@ -53,11 +56,8 @@ public class MenuOrdenes {
                     case "2" -> {
                         int id = entero("ID de la orden: ");
                         imprimir(controlador.consultar(id));
+                        salida.println("Estado actual: " + controlador.estadoDe(id));
                         salida.println("Técnicos: " + controlador.tecnicosDe(id));
-                        for (var repuesto : controlador.repuestosDe(id)) {
-                            salida.printf("Repuesto %d | Cantidad %d | Precio unitario %s%n",
-                                    repuesto.repuestoId(), repuesto.cantidad(), repuesto.precioUnitario());
-                        }
                     }
                     case "3" -> {
                         var ordenes = controlador.listar();
@@ -83,16 +83,27 @@ public class MenuOrdenes {
                     }
                     case "7" -> {
                         int orden = entero("ID de la orden: ");
-                        for (var estado : controlador.listarEstados()) {
-                            salida.printf("%d | %s%n", estado.getId(), estado.getNombre());
-                        }
-                        var estado = controlador.cambiarEstado(orden, entero("ID del nuevo estado: "));
-                        salida.println("Nuevo estado: " + estado.getNombre());
+                        int repuesto = entero("ID del repuesto: ");
+                        int cantidad = entero("Cantidad: ");
+                        controlador.agregarRepuesto(orden, repuesto, cantidad);
+                        salida.println("Repuesto reservado. El stock se descuenta cuando la orden pase a Completado.");
                     }
                     case "8" -> {
-                        controlador.asignarRepuesto(entero("ID de la orden: "),
-                                entero("ID del repuesto: "), entero("Cantidad: "));
-                        salida.println("Repuesto reservado.");
+                        List<ReservaRepuesto> reservas = controlador.repuestosDe(entero("ID de la orden: "));
+                        if (reservas.isEmpty()) salida.println("La orden no tiene repuestos.");
+                        for (ReservaRepuesto r : reservas) {
+                            salida.println("Repuesto " + r.getRepuestoId() + " | cantidad " + r.getCantidad()
+                                    + " | precio unitario " + r.getPrecioUnitarioVenta() + " | " + r.getEstado());
+                        }
+                    }
+                    case "9" -> {
+                        int orden = entero("ID de la orden: ");
+                        String nuevo = controlador.avanzarEstado(orden);
+                        salida.println("La orden " + orden + " pasó a '" + nuevo + "'.");
+                        if (nuevo.equals(CicloOrden.COMPLETADO)) {
+                            salida.println("Se descontaron del inventario los repuestos reservados. "
+                                    + "Ya puedes emitir la factura en el menú Facturación.");
+                        }
                     }
                     default -> salida.println("Selecciona una opción del menú.");
                 }
@@ -153,6 +164,27 @@ public class MenuOrdenes {
     }
 
     private int entero(String mensaje) { return EntradaConsola.entero(entrada, salida, mensaje, 1, Integer.MAX_VALUE); }
+
+    /** Muestra la lista numerada y pide el número hasta que sea válido. */
+    private String elegirServicio() {
+        List<String> servicios = controlador.serviciosSugeridos();
+        salida.println("Servicios:");
+        for (int i = 0; i < servicios.size(); i++) {
+            salida.printf("%d. %s%n", i + 1, servicios.get(i));
+        }
+        while (true) {
+            String texto = leer("Número del servicio: ");
+            try {
+                int numero = Integer.parseInt(texto);
+                if (numero >= 1 && numero <= servicios.size()) {
+                    return servicios.get(numero - 1);
+                }
+            } catch (NumberFormatException e) {
+                // se vuelve a pedir abajo
+            }
+            salida.println("Elige un número entre 1 y " + servicios.size() + ".");
+        }
+    }
 
     private void imprimir(OrdenServicio orden) {
         String nombre = orden.getNombreServicio();

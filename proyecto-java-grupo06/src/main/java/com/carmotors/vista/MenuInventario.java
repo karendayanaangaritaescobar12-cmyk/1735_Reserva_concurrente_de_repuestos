@@ -36,8 +36,8 @@ public class MenuInventario {
             System.out.println("8. Registrar evaluación de proveedor");
             System.out.println("9. Ver evaluaciones de un proveedor");
             System.out.println("10. Alertas (stock bajo / caducidad)");
-            System.out.println("11. Reservar repuesto (prueba)");
-            System.out.println("12. Descontar stock de un servicio (prueba)");
+            System.out.println("11. Reservar repuesto para una orden");
+            System.out.println("12. Completar orden y descontar stock");
             System.out.println("13. Ver reservas de un servicio");
             System.out.println("0. Volver");
             System.out.print("Opción: ");
@@ -239,7 +239,7 @@ public class MenuInventario {
         int repuestoId = leerEntero(entrada);
         System.out.print("Cantidad: ");
         int cantidad = leerEntero(entrada);
-        System.out.print("Id servicio (prueba, ej. 100): ");
+        System.out.print("ID de la orden: ");
         int servicioId = leerEntero(entrada);
         ReservaRepuesto r = controlador.reservar(repuestoId, cantidad, servicioId);
         System.out.println("Reserva creada: " + r);
