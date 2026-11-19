@@ -35,16 +35,15 @@ public class MenuOrdenes {
                         int vehiculo = entero("ID del vehículo: ");
                         int tipo = entero("ID del tipo de mantenimiento: ");
                         salida.println("Servicios sugeridos:");
-                        for (String nombre : controlador.serviciosSugeridos()) {
+                        List<String> sugeridos = controlador.serviciosSugeridos();
+                        for (String nombre : sugeridos) {
                             salida.println("- " + nombre);
                         }
-                        String nombreServicio = leer("Escribe el nombre del servicio que necesitas: ");
-                        while (nombreServicio.isBlank() || nombreServicio.length() > 100) {
-                            salida.println("Escribe un nombre de entre 1 y 100 caracteres.");
-                            nombreServicio = leer("Nombre del servicio: ");
-                        }
-                        String problema = leer("Descripción del problema: ");
-                        BigDecimal costo = new BigDecimal(leer("Costo de mano de obra (ej. 50000.00): "));
+                        salida.println("- Otro, escríbalo");
+
+                        String nombreServicio = leerNombreServicio(sugeridos);
+                        String problema = leer("Descripción del problema (Opcional): ");
+                        BigDecimal costo = leerCosto("Costo de mano de obra (ej. 50000): ");
                         salida.println("Orden creada: " + controlador.crear(vehiculo, tipo, nombreServicio, problema, costo));
                     }
                     case "2" -> {
@@ -104,6 +103,77 @@ public class MenuOrdenes {
                     default:
                         salida.println("Revisa la conexión y el esquema de la base. Estado SQL: " + e.getSQLState());
                 }
+            }
+        }
+    }
+
+
+    private String leerNombreServicio(List<String> sugeridos) {
+        while (true) {
+            String nombreServicio = leer("Escribe el nombre del servicio que necesitas: ");
+
+            // Validar que no esté vacío y tenga longitud razonable
+            if (nombreServicio.isBlank() || nombreServicio.length() > 100) {
+                salida.println("Escribe un nombre de entre 1 y 100 caracteres.");
+                continue;
+            }
+
+            // Validar que sea solo texto (letras, espacios y algunos caracteres comunes)
+            if (!nombreServicio.matches("^[\\p{L}\\s\\-.,]+$")) {
+                salida.println("El nombre del servicio solo puede contener texto (letras y espacios).");
+                continue;
+            }
+
+            // ¿Es uno de los sugeridos? (comparación sin importar mayúsculas/minúsculas)
+            String coincidencia = null;
+            for (String s : sugeridos) {
+                if (s.equalsIgnoreCase(nombreServicio)) {
+                    coincidencia = s; // Usamos la forma oficial de la lista
+                    break;
+                }
+            }
+            if (coincidencia != null) {
+                return coincidencia;
+            }
+
+            // ¿Eligió "Otro"?
+            if (nombreServicio.equalsIgnoreCase("Otro")
+                    || nombreServicio.equalsIgnoreCase("Otro, escríbalo")
+                    || nombreServicio.equalsIgnoreCase("Otro, escribalo")) {
+                String personalizado = leer("Escribe el nombre del servicio: ");
+                while (personalizado.isBlank() || personalizado.length() > 100) {
+                    salida.println("Escribe un nombre de entre 1 y 100 caracteres.");
+                    personalizado = leer("Nombre del servicio: ");
+                }
+                // Validar que el personalizado también sea solo texto
+                if (!personalizado.matches("^[\\p{L}\\s\\-.,]+$")) {
+                    salida.println("El nombre del servicio solo puede contener texto (letras y espacios). Inténtalo de nuevo.");
+                    continue;
+                }
+                return personalizado;
+            }
+
+            // No coincide con nada
+            salida.println("El nombre debe ser uno de los servicios sugeridos o escribe 'Otro'.");
+        }
+    }
+
+    /**
+     * Lee el costo de mano de obra y se repite hasta que el usuario
+     * ingrese un valor numérico válido.
+     */
+    private BigDecimal leerCosto(String mensaje) {
+        while (true) {
+            String texto = leer(mensaje);
+            try {
+                BigDecimal valor = new BigDecimal(texto);
+                if (valor.signum() < 0) {
+                    salida.println("El costo no puede ser negativo. Inténtalo de nuevo.");
+                    continue;
+                }
+                return valor;
+            } catch (NumberFormatException e) {
+                salida.println("Por favor solo valores numéricos, inténtalo de nuevo.");
             }
         }
     }
