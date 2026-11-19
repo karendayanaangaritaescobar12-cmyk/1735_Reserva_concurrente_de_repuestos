@@ -30,7 +30,12 @@ public class MenuOrdenes {
             salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  5. Registrar técnico  6. Listar técnicos");
             salida.println("7. Agregar repuesto  8. Ver repuestos de la orden  9. Avanzar estado  0. Volver");
             if (!entrada.hasNextLine()) return;
-            String opcion = entrada.nextLine().strip();
+            String opcion;
+            try {
+                opcion = EntradaConsola.texto(entrada, salida, "Opción: ", 1, false, false);
+            } catch (NoSuchElementException e) {
+                return;
+            }
             if (opcion.equals("0")) return;
             try {
                 switch (opcion) {

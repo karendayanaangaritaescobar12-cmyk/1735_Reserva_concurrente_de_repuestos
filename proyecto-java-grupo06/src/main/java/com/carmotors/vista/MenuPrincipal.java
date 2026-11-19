@@ -2,6 +2,7 @@ package com.carmotors.vista;
 
 import com.carmotors.controlador.OrdenServicioControlador;
 import java.util.Scanner;
+import java.util.NoSuchElementException;
 
 public class MenuPrincipal {
     private final MenuClientes menuClientes;
@@ -34,7 +35,7 @@ public class MenuPrincipal {
                 if (!entrada.hasNextLine()) {
                     return;
                 }
-                switch (entrada.nextLine().trim()) {
+                switch (EntradaConsola.texto(entrada, System.out, "", 1, false, false)) {
                     case "1":
                         menuClientes.ejecutar(entrada);
                         break;
@@ -56,6 +57,8 @@ public class MenuPrincipal {
                         System.out.println("Opción inválida.");
                 }
             }
+        } catch (NoSuchElementException e) {
+            System.out.println("Fin de la entrada.");
         }
     }
 }

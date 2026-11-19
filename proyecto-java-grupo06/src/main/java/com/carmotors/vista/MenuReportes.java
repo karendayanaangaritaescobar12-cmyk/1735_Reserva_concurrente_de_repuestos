@@ -104,7 +104,6 @@ public class MenuReportes {
     }
 
     private String leer(Scanner entrada, String campo) {
-        System.out.print(campo + ": ");
-        return entrada.nextLine().trim();
+        return EntradaConsola.texto(entrada, System.out, campo + ": ", 255, false, false);
     }
 }

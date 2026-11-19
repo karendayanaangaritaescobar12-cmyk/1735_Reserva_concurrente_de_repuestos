@@ -42,6 +42,14 @@ public class IntegracionSistemaPrueba {
                 admin.setCatalog(base);
                 ejecutar(admin, Path.of("proyecto-java-grupo06/database/schema.sql"));
                 ejecutar(admin, Path.of("proyecto-java-grupo06/database/data.sql"));
+                String[] tablas = {"clientes", "vehiculos", "proveedores", "repuestos", "repuesto_tipos",
+                        "mantenimiento_tipos", "servicio_estados", "servicios", "tecnicos",
+                        "servicios_tecnicos", "servicios_repuestos", "lotes", "evaluaciones_proveedor",
+                        "reservas_repuesto", "facturas"};
+                for (String tabla : tablas) {
+                    comprobar(numero(admin, "SELECT COUNT(*) FROM " + tabla) > 0,
+                            "Faltan datos de presentación en " + tabla);
+                }
                 int antes = numero(admin, "SELECT COUNT(*) FROM servicios");
                 ejecutar(admin, Path.of("proyecto-java-grupo06/database/schema.sql"));
                 ejecutar(admin, Path.of("proyecto-java-grupo06/database/data.sql"));

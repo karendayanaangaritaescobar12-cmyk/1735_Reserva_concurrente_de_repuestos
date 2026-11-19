@@ -31,17 +31,17 @@ public class RegistroCorreccionPrueba {
         try {
             System.setOut(new PrintStream(buffer, true, StandardCharsets.UTF_8));
             new MenuClientes(controlador).ejecutar(new Scanner(
-                "1\nAna\n123\n\n\nmal\n  ANA@example.com  \n"
-                + "2\n123\n\nRenault\nLogan\nabc123\n0\n"
+                "1\nAna\n123\n3001234567\n\nmal\n  ANA@example.com  \n"
+                + "2\n123\n\nabc123\nRenault\nLogan\n0\n"
             .replace("\n", "\n")));
         } finally { System.setOut(original); }
         String salida = buffer.toString(StandardCharsets.UTF_8);
         if (dao.cantidad != 1 || !"ana@example.com".equals(dao.guardado.getEmail())
-                || dao.guardado.getTelefono() != null || vehiculos.cantidad != 1) {
+                || !"3001234567".equals(dao.guardado.getTelefono()) || vehiculos.cantidad != 1) {
             throw new AssertionError("El formulario no conservó datos o duplicó escrituras.");
         }
-        if (!salida.contains("Correo es obligatorio.") || !salida.contains("Ingresa un correo válido.")
-                || !salida.contains("Placa es obligatorio.")) {
+        if (!salida.contains("Ingresa entre 1 y 255 caracteres.") || !salida.contains("Ingresa un correo válido.")
+                || !salida.contains("Vehículo registrado.")) {
             throw new AssertionError("No se volvieron a pedir los campos inválidos.");
         }
         try {

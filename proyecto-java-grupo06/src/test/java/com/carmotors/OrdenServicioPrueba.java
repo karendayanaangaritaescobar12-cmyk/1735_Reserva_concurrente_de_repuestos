@@ -72,7 +72,7 @@ public class OrdenServicioPrueba {
             } catch (SQLIntegrityConstraintViolationException esperado) { /* FK y rollback */ }
             comprobar(servicio.tecnicosDe(id).size() == 1, "La asignación fallida alteró los técnicos");
             var buffer = new ByteArrayOutputStream();
-            String acciones = "abc\n2\nno-numero\n" + id + "\n3\n4\n" + id + "\n1\n0\n";
+            String acciones = "x\n2\nno-numero\n" + id + "\n3\n4\n" + id + "\n1\n0\n";
             try (var entrada = new Scanner(acciones);
                  var salida = new PrintStream(buffer, true, StandardCharsets.UTF_8)) {
                 new MenuOrdenes(new OrdenServicioControlador(servicio), entrada, salida).mostrar();

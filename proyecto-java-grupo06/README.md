@@ -134,3 +134,13 @@ La reserva utiliza reservas_repuesto como registro común de inventario y órden
 Antes de ejecutar esta versión sobre una base existente, ejecuta database/schema.sql para incorporar la columna de precio de reserva. La carpeta database conserva solo schema.sql y data.sql.
 
 IntegracionSistemaPrueba verifica el recorrido completo con MySQL en una base temporal, incluyendo carga repetida de los SQL, cambios de estado, reserva, precio, descuento único, factura y entrega. Requiere una cuenta de pruebas con permisos para crear y eliminar esa base temporal. Se ejecuta desde la raíz del repositorio. Las seis pruebas de validaciones y cálculos también pasaron con compatibilidad Java 17.
+
+## Presentación de la base de datos
+
+Ejecuta database/schema.sql y luego database/data.sql completos en MySQL. data.sql carga ejemplos para las 15 tablas y termina mostrando las tablas, clientes, vehículos, proveedores, repuestos, lotes, alertas, evaluaciones, órdenes, técnicos, reservas, consumos, facturas y reportes. Los identificadores se consultan desde esos resultados y pueden variar entre instalaciones. Para repetir la demostración usa una base exclusiva de pruebas.
+
+## Captura de datos
+
+Los formularios vuelven a pedir los campos vacíos. Teléfono, contacto, marca y observaciones son obligatorios. Si no hay observaciones, escribe Sin observaciones. La fecha de ingreso del lote es obligatoria. Para un lote sin caducidad escribe No aplica. Los nombres de personas y de servicios admiten letras; documentos y teléfonos admiten dígitos, conservando ceros iniciales. Placas, modelos y referencias de repuestos admiten las combinaciones de letras y números necesarias.
+
+Validación del cierre: siete pruebas ejecutables sin base de datos, integración H2 de órdenes e integración MySQL en base temporal. Se comprobó que las 15 tablas reciben datos, que ambos SQL pueden repetirse y que el flujo conserva reservas, precio, stock, factura de texto y fecha de entrega. CamposObligatoriosPrueba cubre entradas vacías en los formularios y los menús, incluido No aplica para caducidad.

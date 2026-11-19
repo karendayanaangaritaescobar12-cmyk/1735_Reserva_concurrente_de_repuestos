@@ -87,11 +87,8 @@ public class MenuClientes {
     private String[] leerFormulario(Scanner entrada, String[] campos) {
         String[] datos = new String[campos.length];
         for (int i = 0; i < campos.length; i++) {
-            String etiqueta = campos[i];
-            if (etiqueta.equals("Teléfono")) {
-                etiqueta += " (opcional)";
-            }
-            datos[i] = leer(entrada, etiqueta);
+
+            datos[i] = EntradaConsola.texto(entrada, System.out, campos[i] + ": ", 255, false, false);
         }
         return datos;
     }
@@ -131,7 +128,6 @@ public class MenuClientes {
     }
 
     private static String leer(Scanner entrada, String campo) {
-        System.out.print(campo + ": ");
-        return entrada.nextLine().strip();
+        return EntradaConsola.texto(entrada, System.out, campo + ": ", 255, false, false);
     }
 }

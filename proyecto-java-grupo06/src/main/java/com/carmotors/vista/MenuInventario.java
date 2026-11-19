@@ -45,9 +45,8 @@ public class MenuInventario {
             if (!entrada.hasNextLine()) {
                 return;
             }
-            String opcion = entrada.nextLine().trim();
-
             try {
+                String opcion = EntradaConsola.texto(entrada, System.out, "", 2, false, false);
                 switch (opcion) {
                     case "1":
                         registrarProveedor(entrada);
@@ -105,7 +104,7 @@ public class MenuInventario {
 
     private void registrarProveedor(Scanner entrada) throws SQLException {
         String nombre = leerNombre(entrada);
-        String contacto = EntradaConsola.texto(entrada, System.out, "Contacto: ", 255, true, false);
+        String contacto = EntradaConsola.texto(entrada, System.out, "Contacto: ", 255, false, false);
         int id = controlador.registrarProveedor(nombre, contacto);
         System.out.println("Proveedor registrado con id=" + id);
     }
@@ -123,7 +122,7 @@ public class MenuInventario {
 
     private void registrarRepuesto(Scanner entrada) throws SQLException {
         String nombre = leerNombre(entrada);
-        String marca = EntradaConsola.texto(entrada, System.out, "Marca: ", 100, true, false);
+        String marca = EntradaConsola.texto(entrada, System.out, "Marca: ", 100, false, false);
         System.out.print("Id tipo de repuesto: ");
         int tipoId = leerEntero(entrada);
         System.out.print("Id proveedor: ");
@@ -172,9 +171,9 @@ public class MenuInventario {
         int repuestoId = leerEntero(entrada);
         System.out.print("Id proveedor: ");
         int proveedorId = leerEntero(entrada);
-        System.out.print("Fecha ingreso (YYYY-MM-DD, vacío = hoy): ");
-        LocalDate ingreso = leerFechaOpcional(entrada);
-        System.out.print("Fecha caducidad (YYYY-MM-DD, vacío = sin caducidad): ");
+        System.out.print("Fecha ingreso (AAAA-MM-DD): ");
+        LocalDate ingreso = EntradaConsola.fecha(entrada, System.out, "Fecha: ", false);
+        System.out.print("Fecha caducidad (AAAA-MM-DD o No aplica): ");
         LocalDate caducidad = leerFechaOpcional(entrada);
         LocalDate inicio = ingreso == null ? LocalDate.now() : ingreso;
         while (caducidad != null && caducidad.isBefore(inicio)) {
@@ -209,7 +208,7 @@ public class MenuInventario {
         int calidad = EntradaConsola.entero(entrada, System.out, "", 1, 5);
         System.out.print("Puntualidad (1-5): ");
         int puntualidad = EntradaConsola.entero(entrada, System.out, "", 1, 5);
-        String obs = EntradaConsola.texto(entrada, System.out, "Observaciones: ", 500, true, false);
+        String obs = EntradaConsola.texto(entrada, System.out, "Observaciones (escribe Sin observaciones si corresponde): ", 500, false, false);
         int id = controlador.registrarEvaluacion(proveedorId, calidad, puntualidad, obs);
         System.out.println("Evaluación registrada con id=" + id);
     }
@@ -281,6 +280,16 @@ public class MenuInventario {
     }
 
     private LocalDate leerFechaOpcional(Scanner entrada) {
-        return EntradaConsola.fecha(entrada, System.out, "Fecha: ", true);
+        while (true) {
+            String texto = EntradaConsola.texto(entrada, System.out,
+                    "Fecha o No aplica: ", 10, false, false);
+            if (texto.equalsIgnoreCase("No aplica")) return null;
+            try {
+                if (texto.matches("[0-9]{4}-[0-9]{2}-[0-9]{2}")) return LocalDate.parse(texto);
+            } catch (DateTimeParseException e) {
+                // Vuelve a pedir el mismo campo.
+            }
+            System.out.println("Ingresa una fecha válida o escribe No aplica.");
+        }
     }
 }

@@ -56,6 +56,10 @@ public class MenuFacturacion {
         Factura previa = facturas.vistaPrevia(orden);
         System.out.print(facturas.texto(previa));
         String respuesta = leer(entrada, "¿Emitir esta factura? La orden pasará a Facturado (s/n)");
+        while (!respuesta.equalsIgnoreCase("s") && !respuesta.equalsIgnoreCase("n")) {
+            System.out.println("Responde s o n.");
+            respuesta = leer(entrada, "¿Emitir esta factura? (s/n)");
+        }
         if (!respuesta.equalsIgnoreCase("s")) {
             System.out.println("No se emitió la factura.");
             return;
@@ -74,7 +78,6 @@ public class MenuFacturacion {
     }
 
     private String leer(Scanner entrada, String campo) {
-        System.out.print(campo + ": ");
-        return entrada.nextLine().trim();
+        return EntradaConsola.texto(entrada, System.out, campo + ": ", 255, false, false);
     }
 }
