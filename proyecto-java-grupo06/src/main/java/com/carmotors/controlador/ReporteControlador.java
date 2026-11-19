@@ -24,6 +24,10 @@ public class ReporteControlador {
         this.facturas = facturas;
     }
 
+    public Map<String, Long> serviciosPorNombre(String desde, String hasta) throws SQLException {
+        return reportes.serviciosPorNombre(convertirFecha(desde), convertirFecha(hasta));
+    }
+
     public Map<String, Long> serviciosPorTipo(String desde, String hasta) throws SQLException {
         return reportes.serviciosPorTipo(convertirFecha(desde), convertirFecha(hasta));
     }

@@ -171,10 +171,14 @@ public class InventarioProveedorServicio {
         if (cantidad <= 0)
             throw new IllegalArgumentException("La cantidad a reservar debe ser mayor a cero.");
         Repuesto repuesto = obtenerRepuesto(repuestoId);
-        if (!repuesto.tieneStockSuficiente(cantidad)) {
+        // Lo que ya está reservado por otras órdenes no está disponible, aunque siga en el stock
+        int reservado = reservas.listarActivasPorRepuesto(repuestoId).stream()
+                .mapToInt(ReservaRepuesto::getCantidad).sum();
+        int disponible = repuesto.getCantidadStock() - reservado;
+        if (cantidad > disponible) {
             throw new IllegalArgumentException(String.format(
-                    "Stock insuficiente para repuesto id=%d. Solicitado=%d, Disponible=%d",
-                    repuestoId, cantidad, repuesto.getCantidadStock()));
+                    "Stock insuficiente para repuesto id=%d. Solicitado=%d, Disponible=%d (stock %d, reservado %d)",
+                    repuestoId, cantidad, Math.max(disponible, 0), repuesto.getCantidadStock(), reservado));
         }
         ReservaRepuesto reserva = new ReservaRepuesto(repuestoId, servicioId, cantidad);
         reservas.insertar(reserva);

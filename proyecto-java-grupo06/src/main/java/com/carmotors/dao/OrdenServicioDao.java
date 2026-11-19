@@ -46,6 +46,23 @@ public class OrdenServicioDao {
         return List.copyOf(resultado);
     }
 
+    /** Cambia el estado de la orden. Si fechaEntrega no es null, también la guarda (al pasar a Entregado). */
+    public void actualizarEstado(Connection c, int id, int estadoId, LocalDateTime fechaEntrega) throws SQLException {
+        String sql = fechaEntrega == null
+                ? "UPDATE servicios SET estado_id = ? WHERE id = ?"
+                : "UPDATE servicios SET estado_id = ?, fecha_entrega = ? WHERE id = ?";
+        try (PreparedStatement p = c.prepareStatement(sql)) {
+            p.setInt(1, estadoId);
+            if (fechaEntrega == null) {
+                p.setInt(2, id);
+            } else {
+                p.setObject(2, fechaEntrega);
+                p.setInt(3, id);
+            }
+            if (p.executeUpdate() != 1) throw new SQLException("No se actualizó la orden " + id);
+        }
+    }
+
     private OrdenServicio mapear(ResultSet r) throws SQLException {
         OrdenServicio orden = new OrdenServicio(r.getInt("vehiculo_id"), r.getInt("mantenimiento_tipo_id"),
                 r.getString("descripcion_problema"), r.getBigDecimal("costo_mano_obra"), r.getInt("estado_id"));

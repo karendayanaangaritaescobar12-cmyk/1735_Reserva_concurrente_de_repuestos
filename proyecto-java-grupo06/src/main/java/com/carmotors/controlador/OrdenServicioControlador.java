@@ -1,6 +1,7 @@
 package com.carmotors.controlador;
 
 import com.carmotors.modelo.OrdenServicio;
+import com.carmotors.modelo.ReservaRepuesto;
 import com.carmotors.modelo.Tecnico;
 import com.carmotors.servicio.OrdenServicioServicio;
 import java.math.BigDecimal;
@@ -41,4 +42,14 @@ public class OrdenServicioControlador {
     public List<String> serviciosSugeridos() {
         return servicio.serviciosSugeridos();
     }
+
+    public String estadoDe(int orden) throws SQLException { return servicio.estadoDe(orden); }
+
+    public void agregarRepuesto(int orden, int repuesto, int cantidad) throws SQLException {
+        servicio.agregarRepuesto(orden, repuesto, cantidad);
+    }
+
+    public List<ReservaRepuesto> repuestosDe(int orden) throws SQLException { return servicio.repuestosDe(orden); }
+
+    public String avanzarEstado(int orden) throws SQLException { return servicio.avanzarEstado(orden); }
 }
