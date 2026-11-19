@@ -108,7 +108,7 @@ public class MenuClientes {
         throw error;
     }
     private void historial(Scanner entrada) throws SQLException {
-        List<HistorialVehiculo> vehiculos = clientes.historial(leer(entrada, "Documento del cliente"));
+        List<HistorialVehiculo> vehiculos = clientes.historial(EntradaConsola.texto(entrada, System.out, "Documento del cliente: ", 20, false, false));
         if (vehiculos.isEmpty()) System.out.println("No se encontraron vehículos para ese documento.");
         for (HistorialVehiculo vehiculo : vehiculos) {
             System.out.printf("%s | %s | %s %s%n", vehiculo.getNombre(), vehiculo.getPlaca(),

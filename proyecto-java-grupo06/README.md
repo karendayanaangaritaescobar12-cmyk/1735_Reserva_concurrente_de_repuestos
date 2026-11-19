@@ -1,6 +1,6 @@
 # Sistema de Gestión para el Taller Automotriz CarMotors
 
-CarMotors gestiona clientes, vehículos y órdenes de servicio de un taller automotriz. El proyecto también incluye módulos de inventario y reportes pendientes de conectar al menú.
+CarMotors gestiona clientes, vehículos y órdenes de servicio de un taller automotriz. El menú principal también permite abrir inventario, reportes y la consulta de datos de factura.
 
 ## Tecnologías
 
@@ -18,8 +18,8 @@ Java 17, MySQL 8, JDBC, Maven y consola.
 ## Estado de los demás módulos
 
 - **Clientes y vehículos:** registro, consulta del historial y recordatorios de mantenimiento preventivo desde la consola.
-- **Inventario y proveedores:** catálogo, lotes, evaluaciones, alertas y reservas implementados en el servicio y el controlador. Quedan pendientes el acceso desde el menú y la integración de reservas y descuentos con el ciclo de órdenes.
-- **Reportes y facturación:** reportes de servicios, productividad y consumo de repuestos, además del subtotal de una orden completada. Quedan pendientes el acceso desde el menú, la emisión de la factura y el ciclo de estados hasta la entrega.
+- **Inventario y proveedores:** catálogo, lotes, evaluaciones, alertas y reservas implementados en el servicio y el controlador. El módulo está conectado al menú. Queda pendiente integrar las reservas y descuentos con el ciclo de órdenes.
+- **Reportes y facturación:** reportes de servicios, productividad y consumo de repuestos, además del subtotal de una orden completada. El módulo está conectado al menú. Quedan pendientes integrar la emisión de la factura y el ciclo de estados hasta la entrega.
 
 ## Base de datos
 
@@ -30,7 +30,7 @@ Un servicio puede tener varios técnicos y un técnico puede atender varios serv
 
 ![Diagrama entidad-relación del equipo](docs/diagrama-er.png)
 
-Los scripts de lotes, evaluaciones y reservas complementan el esquema base para las pruebas de inventario.
+La carpeta database contiene solo schema.sql y data.sql. schema.sql incluye las 15 tablas del proyecto, lotes, evaluaciones, reservas y el nombre del servicio. data.sql incluye los catálogos y los datos de prueba de clientes, órdenes, técnicos y reportes.
 
 ## Instalación y ejecución
 
@@ -68,7 +68,7 @@ Compila las clases de prueba con `mvn test-compile` y ejecuta sus métodos `main
 - Con `--mysql`, usa una base exclusiva de pruebas y las variables de conexión indicadas arriba. Los datos de reportes están incluidos en `database/data.sql`. Consulta los [resultados esperados](docs/reportes-resultados-esperados.md).
 - El modo `--h2` de órdenes falla al cargar `schema.sql` porque H2 rechaza la sentencia MySQL `CREATE DATABASE`.
 
-Se verificó la compilación con compatibilidad Java 17 y pasaron las tres pruebas sin base de datos. La ejecución contra MySQL queda pendiente.
+Se verificó la compilación con compatibilidad Java 17 y las pruebas ejecutables sin base de datos, incluidos los reintentos de campos inválidos. La ejecución contra MySQL queda pendiente.
 
 ## Decisiones de diseño
 
@@ -86,4 +86,6 @@ Se verificó la compilación con compatibilidad Java 17 y pasaron las tres prueb
 
 ## Autores
 
-Grupo 6. Los nombres completos deben completarse con los datos de los integrantes.
+Grupo 6. Nini, Yeimer, Andrés y Keiler.
+
+Las pruebas RegistroCorreccionPrueba y ValidacionesFormularioPrueba verifican los formularios sin MySQL, incluidos correo, nombre, documento, teléfono, IDs, fechas y costos.

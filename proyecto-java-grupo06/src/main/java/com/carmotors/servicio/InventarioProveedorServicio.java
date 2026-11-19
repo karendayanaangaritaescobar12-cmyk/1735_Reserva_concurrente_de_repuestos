@@ -39,7 +39,7 @@ public class InventarioProveedorServicio {
 
 
     public int registrarProveedor(String nombre, String contacto) throws SQLException {
-        Proveedor p = new Proveedor(0, obligatorio(nombre, 255, "Nombre del proveedor"),
+        Proveedor p = new Proveedor(0, ValidacionRegistro.textoConLetras(nombre, 255, "Nombre del proveedor"),
                 opcional(contacto, 255, "Contacto"));
         try {
             return proveedores.insertar(p);
@@ -67,7 +67,7 @@ public class InventarioProveedorServicio {
         if (stock < 0 || stockMinimo < 0)
             throw new IllegalArgumentException("Stock y stock mínimo no pueden ser negativos.");
         obtenerProveedor(proveedorId);
-        Repuesto r = new Repuesto(0, obligatorio(nombre, 255, "Nombre del repuesto"),
+        Repuesto r = new Repuesto(0, ValidacionRegistro.textoConLetras(nombre, 255, "Nombre del repuesto"),
                 opcional(marca, 100, "Marca"), tipoId, proveedorId,
                 precioCompra, precioVenta, stock, stockMinimo);
         try {

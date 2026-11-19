@@ -26,8 +26,8 @@ public class RegistroClienteServicio {
         if (!correo.matches("[^\\s@]+@[^\\s@]+\\.[^\\s@]+")) {
             throw new CampoInvalidoException("Correo", "Ingresa un correo válido.");
         }
-        Cliente cliente = new Cliente(ValidacionRegistro.obligatorio(nombre, 255, "Nombre"),
-                ValidacionRegistro.obligatorio(documento, 20, "Documento"), ValidacionRegistro.opcional(telefono, 20, "Teléfono"), correo);
+        Cliente cliente = new Cliente(ValidacionRegistro.nombrePersona(nombre, "Nombre"),
+                ValidacionRegistro.digitos(documento, 20, "Documento", false), ValidacionRegistro.digitos(telefono, 20, "Teléfono", true), correo);
         try {
             clientes.insertar(cliente);
         } catch (SQLIntegrityConstraintViolationException e) {

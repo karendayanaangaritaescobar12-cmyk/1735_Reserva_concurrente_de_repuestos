@@ -30,8 +30,14 @@ public class MenuReportes {
                     System.out.println("Opción inválida.");
                     continue;
                 }
-                String desde = leer(entrada, "Desde (AAAA-MM-DD)");
-                String hasta = leer(entrada, "Hasta (AAAA-MM-DD)");
+                java.time.LocalDate inicio = EntradaConsola.fecha(entrada, System.out, "Desde (AAAA-MM-DD): ", false);
+                java.time.LocalDate fin = EntradaConsola.fecha(entrada, System.out, "Hasta (AAAA-MM-DD): ", false);
+                while (fin.isBefore(inicio)) {
+                    System.out.println("La fecha final debe ser igual o posterior a la inicial.");
+                    fin = EntradaConsola.fecha(entrada, System.out, "Hasta (AAAA-MM-DD): ", false);
+                }
+                String desde = inicio.toString();
+                String hasta = fin.toString();
                 switch (opcion) {
                     case "1":
                         mostrar(reportes.serviciosPorTipo(desde, hasta).entrySet());
@@ -55,11 +61,11 @@ public class MenuReportes {
 
     public void consultarFactura(Scanner entrada) {
         try {
-            String id = leer(entrada, "ID de la orden (0 para volver)");
-            if (id.equals("0")) {
+            int id = EntradaConsola.entero(entrada, System.out, "ID de la orden (0 para volver): ", 0, Integer.MAX_VALUE);
+            if (id == 0) {
                 return;
             }
-            DatosFactura factura = reportes.datosFactura(Integer.parseInt(id));
+            DatosFactura factura = reportes.datosFactura(id);
             System.out.println(factura);
             System.out.println("Documento: " + factura.getDocumento());
             for (RepuestoUsado repuesto : factura.getRepuestos()) {

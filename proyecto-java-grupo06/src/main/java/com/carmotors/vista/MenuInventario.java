@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Scanner;
+import java.util.NoSuchElementException;
 
 public class MenuInventario {
 
@@ -92,6 +93,8 @@ public class MenuInventario {
                     default:
                         System.out.println("Opción inválida.");
                 }
+            } catch (NoSuchElementException e) {
+                return;
             } catch (IllegalArgumentException e) {
                 System.out.println("Error: " + e.getMessage());
             } catch (SQLException e) {
@@ -101,10 +104,8 @@ public class MenuInventario {
     }
 
     private void registrarProveedor(Scanner entrada) throws SQLException {
-        System.out.print("Nombre: ");
-        String nombre = entrada.nextLine();
-        System.out.print("Contacto: ");
-        String contacto = entrada.nextLine();
+        String nombre = leerNombre(entrada);
+        String contacto = EntradaConsola.texto(entrada, System.out, "Contacto: ", 255, true, false);
         int id = controlador.registrarProveedor(nombre, contacto);
         System.out.println("Proveedor registrado con id=" + id);
     }
@@ -121,10 +122,8 @@ public class MenuInventario {
     }
 
     private void registrarRepuesto(Scanner entrada) throws SQLException {
-        System.out.print("Nombre: ");
-        String nombre = entrada.nextLine();
-        System.out.print("Marca: ");
-        String marca = entrada.nextLine();
+        String nombre = leerNombre(entrada);
+        String marca = EntradaConsola.texto(entrada, System.out, "Marca: ", 100, true, false);
         System.out.print("Id tipo de repuesto: ");
         int tipoId = leerEntero(entrada);
         System.out.print("Id proveedor: ");
@@ -134,9 +133,9 @@ public class MenuInventario {
         System.out.print("Precio venta: ");
         BigDecimal venta = leerDecimal(entrada);
         System.out.print("Stock inicial: ");
-        int stock = leerEntero(entrada);
+        int stock = EntradaConsola.entero(entrada, System.out, "", 0, Integer.MAX_VALUE);
         System.out.print("Stock mínimo: ");
-        int minimo = leerEntero(entrada);
+        int minimo = EntradaConsola.entero(entrada, System.out, "", 0, Integer.MAX_VALUE);
 
         int id = controlador.registrarRepuesto(nombre, marca, tipoId, proveedorId, compra, venta, stock, minimo);
         System.out.println("Repuesto registrado con id=" + id);
@@ -168,8 +167,7 @@ public class MenuInventario {
     }
 
     private void registrarLote(Scanner entrada) throws SQLException {
-        System.out.print("Código de lote: ");
-        String codigo = entrada.nextLine();
+        String codigo = EntradaConsola.texto(entrada, System.out, "Código de lote: ", 50, false, false);
         System.out.print("Id repuesto: ");
         int repuestoId = leerEntero(entrada);
         System.out.print("Id proveedor: ");
@@ -178,6 +176,11 @@ public class MenuInventario {
         LocalDate ingreso = leerFechaOpcional(entrada);
         System.out.print("Fecha caducidad (YYYY-MM-DD, vacío = sin caducidad): ");
         LocalDate caducidad = leerFechaOpcional(entrada);
+        LocalDate inicio = ingreso == null ? LocalDate.now() : ingreso;
+        while (caducidad != null && caducidad.isBefore(inicio)) {
+            System.out.println("La caducidad debe ser igual o posterior al ingreso.");
+            caducidad = leerFechaOpcional(entrada);
+        }
         System.out.print("Cantidad recibida: ");
         int cantidad = leerEntero(entrada);
 
@@ -203,11 +206,10 @@ public class MenuInventario {
         System.out.print("Id proveedor: ");
         int proveedorId = leerEntero(entrada);
         System.out.print("Calidad (1-5): ");
-        int calidad = leerEntero(entrada);
+        int calidad = EntradaConsola.entero(entrada, System.out, "", 1, 5);
         System.out.print("Puntualidad (1-5): ");
-        int puntualidad = leerEntero(entrada);
-        System.out.print("Observaciones: ");
-        String obs = entrada.nextLine();
+        int puntualidad = EntradaConsola.entero(entrada, System.out, "", 1, 5);
+        String obs = EntradaConsola.texto(entrada, System.out, "Observaciones: ", 500, true, false);
         int id = controlador.registrarEvaluacion(proveedorId, calidad, puntualidad, obs);
         System.out.println("Evaluación registrada con id=" + id);
     }
@@ -263,33 +265,22 @@ public class MenuInventario {
         }
     }
 
-    private int leerEntero(Scanner entrada) {
-        String texto = entrada.nextLine().trim();
-        try {
-            return Integer.parseInt(texto);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Debes ingresar un número entero válido.");
+    private String leerNombre(Scanner entrada) {
+        while (true) {
+            String nombre = EntradaConsola.texto(entrada, System.out, "Nombre: ", 255, false, false);
+            if (nombre.codePoints().anyMatch(Character::isLetter)) return nombre;
+            System.out.println("El nombre debe contener letras. Puede incluir referencias como 12V o 3M.");
         }
+    }
+    private int leerEntero(Scanner entrada) {
+        return EntradaConsola.entero(entrada, System.out, "Valor: ", 1, Integer.MAX_VALUE);
     }
 
     private BigDecimal leerDecimal(Scanner entrada) {
-        String texto = entrada.nextLine().trim().replace(',', '.');
-        try {
-            return new BigDecimal(texto);
-        } catch (NumberFormatException e) {
-            throw new IllegalArgumentException("Debes ingresar un número decimal válido.");
-        }
+        return EntradaConsola.decimal(entrada, System.out, "Valor: ");
     }
 
     private LocalDate leerFechaOpcional(Scanner entrada) {
-        String texto = entrada.nextLine().trim();
-        if (texto.isEmpty()) {
-            return null;
-        }
-        try {
-            return LocalDate.parse(texto);
-        } catch (DateTimeParseException e) {
-            throw new IllegalArgumentException("Fecha inválida. Usa formato YYYY-MM-DD.");
-        }
+        return EntradaConsola.fecha(entrada, System.out, "Fecha: ", true);
     }
 }

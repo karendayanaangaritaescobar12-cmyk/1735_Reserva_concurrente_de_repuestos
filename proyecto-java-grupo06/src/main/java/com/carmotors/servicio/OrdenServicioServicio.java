@@ -23,9 +23,7 @@ public class OrdenServicioServicio {
 
     public int crear(int vehiculo, int tipo, String nombreServicio, String problema,
                      BigDecimal manoObra) throws SQLException {
-        if (nombreServicio == null || nombreServicio.isBlank() || nombreServicio.strip().length() > 100) {
-            throw new IllegalArgumentException("El nombre del servicio debe tener entre 1 y 100 caracteres.");
-        }
+        nombreServicio = ValidacionRegistro.nombreServicio(nombreServicio);
         return crearOrden(vehiculo, tipo, nombreServicio.strip(), problema, manoObra);
     }
 
@@ -36,7 +34,7 @@ public class OrdenServicioServicio {
     private int crearOrden(int vehiculo, int tipo, String nombreServicio, String problema,
                            BigDecimal manoObra) throws SQLException {
         if (vehiculo <= 0 || tipo <= 0) throw new IllegalArgumentException("Vehículo y tipo deben ser positivos.");
-        if (problema == null || problema.isBlank()) throw new IllegalArgumentException("Describe el problema.");
+        problema = ValidacionRegistro.textoConLetras(problema, 65535, "Descripción del problema");
         if (manoObra == null || manoObra.signum() < 0 || manoObra.scale() > 2
                 || manoObra.compareTo(new BigDecimal("99999999.99")) > 0)
             throw new IllegalArgumentException("Mano de obra inválida.");
@@ -81,9 +79,7 @@ public class OrdenServicioServicio {
     }
 
     public int registrarTecnico(String nombre) throws SQLException {
-        if (nombre == null || nombre.trim().isEmpty() || nombre.trim().length() > 255) {
-            throw new IllegalArgumentException("El nombre del técnico debe tener entre 1 y 255 caracteres.");
-        }
+        nombre = ValidacionRegistro.nombrePersona(nombre, "Nombre del técnico");
         try (Connection conexion = conexiones.abrir()) {
             return new TecnicoDao().insertar(conexion, nombre.trim());
         }

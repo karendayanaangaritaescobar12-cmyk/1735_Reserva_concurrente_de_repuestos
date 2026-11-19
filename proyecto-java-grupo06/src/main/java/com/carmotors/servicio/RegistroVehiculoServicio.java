@@ -16,7 +16,7 @@ public class RegistroVehiculoServicio {
     public void registrarVehiculo(String documento, String placa, String marca, String modelo) throws SQLException {
         Vehiculo vehiculo = new Vehiculo(ValidacionRegistro.obligatorio(documento, 20, "Documento"),
                 ValidacionRegistro.obligatorio(placa, 10, "Placa").toUpperCase(Locale.ROOT),
-                ValidacionRegistro.obligatorio(marca, 50, "Marca"),
+                ValidacionRegistro.textoConLetras(marca, 50, "Marca"),
                 ValidacionRegistro.obligatorio(modelo, 50, "Modelo"));
         try {
             if (!vehiculos.insertar(vehiculo)) {
