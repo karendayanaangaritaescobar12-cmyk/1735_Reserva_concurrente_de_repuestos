@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 
 public class OrdenServicio {
     private int id;
+    private String nombreServicio;
     private final int vehiculoId;
     private final int mantenimientoTipoId;
     private LocalDateTime fechaRecepcion;
@@ -22,6 +23,9 @@ public class OrdenServicio {
         this.estadoId = estadoId;
         this.fechaRecepcion = LocalDateTime.now();
     }
+
+    public String getNombreServicio() { return nombreServicio; }
+    public void setNombreServicio(String nombreServicio) { this.nombreServicio = nombreServicio; }
 
     public int getId() { return id; }
     public void setId(int id) { this.id = id; }

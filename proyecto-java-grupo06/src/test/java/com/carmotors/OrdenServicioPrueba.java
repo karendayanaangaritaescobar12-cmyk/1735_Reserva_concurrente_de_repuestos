@@ -10,7 +10,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
 import com.carmotors.controlador.OrdenServicioControlador;
-import com.carmotors.vista.MenuPrincipal;
+import com.carmotors.vista.MenuOrdenes;
 
 public class OrdenServicioPrueba {
     @FunctionalInterface interface Accion { void ejecutar() throws Exception; }
@@ -24,6 +24,9 @@ public class OrdenServicioPrueba {
         rechazar(() -> sinBD.crear(1, 1, "Problema", new BigDecimal("-1")));
         rechazar(() -> sinBD.crear(1, 1, "Problema", new BigDecimal("1.001")));
         rechazar(() -> sinBD.crear(1, 1, "Problema", new BigDecimal("100000000")));
+        rechazar(() -> sinBD.crear(1, 1, "", "Problema", BigDecimal.ZERO));
+        rechazar(() -> sinBD.crear(1, 1, "   ", "Problema", BigDecimal.ZERO));
+        rechazar(() -> sinBD.crear(1, 1, "a".repeat(101), "Problema", BigDecimal.ZERO));
         rechazar(() -> sinBD.consultar(0));
         rechazar(() -> sinBD.tecnicosDe(0));
         rechazar(() -> sinBD.asignarTecnico(0, 1));
@@ -31,7 +34,7 @@ public class OrdenServicioPrueba {
         rechazar(() -> sinBD.cambiarEstado(0, 1));
         rechazar(() -> sinBD.cambiarEstado(1, 0));
         rechazar(() -> sinBD.asignarRepuesto(1, 1, 0));
-        System.out.println("OK: 14 validaciones sin BD.");
+        System.out.println("OK: 17 validaciones sin BD.");
         if (args.length == 0) return;
         boolean h2 = args[0].equals("--h2");
         if (!h2 && !args[0].equals("--mysql")) throw new IllegalArgumentException("Usa --h2 o --mysql");
@@ -41,16 +44,22 @@ public class OrdenServicioPrueba {
         if (h2) {
             try (Connection c = DriverManager.getConnection(url, usuario, clave);
                  Statement s = c.createStatement()) {
-                for (String archivo : new String[]{"schema.sql", "data.sql"}) {
-                    String sql = Files.readString(Path.of("database", archivo));
-                    for (String sentencia : sql.split(";")) {
-                        if (!sentencia.isBlank()) s.execute(sentencia);
-                    }
+                String esquema = Files.readString(Path.of("database", "schema.sql"));
+                esquema = esquema.substring(0, esquema.indexOf("SET @existe_nombre"));
+                for (String sentencia : esquema.split(";")) {
+                    if (!sentencia.isBlank() && !sentencia.stripLeading().startsWith("CREATE DATABASE")
+                            && !sentencia.stripLeading().startsWith("USE")
+                            && !sentencia.stripLeading().startsWith("--")) s.execute(sentencia);
                 }
+                s.executeUpdate("INSERT INTO servicio_estados (id, nombre) VALUES "
+                        + "(1, 'Pendiente'), (2, 'En Proceso'), (3, 'Completado'), (4, 'Facturado'), (5, 'Entregado')");
+                s.executeUpdate("INSERT INTO mantenimiento_tipos (id, nombre) VALUES (1, 'Preventivo')");
+                s.executeUpdate("INSERT INTO vehiculos (id, placa) VALUES (1, 'TST001')");
+                s.executeUpdate("INSERT INTO tecnicos (id, nombre) VALUES (1, 'Tecnico de prueba')");
             }
         }
         var servicio = new OrdenServicioServicio(() -> DriverManager.getConnection(url, usuario, clave));
-        int id = servicio.crear(1, 1, "Cambio de aceite", new BigDecimal("50000.00"));
+        int id = servicio.crear(1, 1, "Cambio de aceite", "Mantenimiento del motor", new BigDecimal("50000.00"));
         int repuesto;
         try (Connection c = DriverManager.getConnection(url, usuario, clave);
              PreparedStatement p = c.prepareStatement("INSERT INTO repuestos "
@@ -65,7 +74,8 @@ public class OrdenServicioPrueba {
         try {
             var orden = servicio.consultar(id);
             comprobar(orden.getVehiculoId() == 1 && orden.getEstadoId() == 1, "Datos de creación incorrectos");
-            comprobar(orden.getDescripcionProblema().equals("Cambio de aceite"), "Descripción incorrecta");
+            comprobar(orden.getDescripcionProblema().equals("Mantenimiento del motor"), "Descripción incorrecta");
+            comprobar("Cambio de aceite".equals(orden.getNombreServicio()), "Nombre de servicio incorrecto");
             comprobar(orden.getCostoManoObra().compareTo(new BigDecimal("50000.00")) == 0, "Costo incorrecto");
             comprobar(servicio.listar().stream().anyMatch(o -> o.getId() == id), "Falta orden en listado");
             servicio.asignarTecnico(id, 1);
@@ -81,14 +91,14 @@ public class OrdenServicioPrueba {
             rechazar(() -> servicio.cambiarEstado(id, 3));
             comprobar(servicio.consultar(id).getEstadoId() == 1, "El salto alteró el estado");
             var buffer = new ByteArrayOutputStream();
-            String acciones = "abc\n2\nno-numero\n6\n" + id + "\n" + repuesto + "\n2\n2\n"
-                    + id + "\n3\n4\n" + id + "\n1\n5\n" + id + "\n2\n0\n";
+            String acciones = "abc\n8\n" + id + "\n" + repuesto + "\n2\n2\nno-numero\n"
+                    + id + "\n3\n4\n" + id + "\n1\n7\n" + id + "\n2\n0\n";
             try (var entrada = new Scanner(acciones);
                  var salida = new PrintStream(buffer, true, StandardCharsets.UTF_8)) {
-                new MenuPrincipal(new OrdenServicioControlador(servicio), entrada, salida).mostrar();
+                new MenuOrdenes(new OrdenServicioControlador(servicio), entrada, salida).mostrar();
             }
             String consola = buffer.toString(StandardCharsets.UTF_8);
-            comprobar(consola.contains("Selecciona una opción") && consola.contains("Ingresa un número válido"),
+            comprobar(consola.contains("Selecciona una opción") && consola.contains("Ingresa un entero entre"),
                     "La consola no maneja entradas inválidas");
             comprobar(consola.contains("Cambio de aceite") && consola.contains("Técnicos: [1]")
                     && consola.contains("Técnico asignado.") && consola.contains("Nuevo estado: En Proceso"),

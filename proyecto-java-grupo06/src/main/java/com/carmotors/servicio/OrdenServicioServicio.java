@@ -4,6 +4,7 @@ import com.carmotors.dao.*;
 import com.carmotors.modelo.EstadoServicio;
 import com.carmotors.modelo.OrdenServicio;
 import com.carmotors.modelo.RepuestoOrden;
+import com.carmotors.modelo.Tecnico;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.time.LocalDateTime;
@@ -28,15 +29,28 @@ public class OrdenServicioServicio {
         this.conexiones = java.util.Objects.requireNonNull(conexiones);
     }
 
+    public int crear(int vehiculo, int tipo, String nombreServicio, String problema,
+                     BigDecimal manoObra) throws SQLException {
+        nombreServicio = ValidacionRegistro.nombreServicio(nombreServicio);
+        return crearOrden(vehiculo, tipo, nombreServicio.strip(), problema, manoObra);
+    }
+
     public int crear(int vehiculo, int tipo, String problema, BigDecimal manoObra) throws SQLException {
+        return crearOrden(vehiculo, tipo, null, problema, manoObra);
+    }
+
+    private int crearOrden(int vehiculo, int tipo, String nombreServicio, String problema,
+                           BigDecimal manoObra) throws SQLException {
         if (vehiculo <= 0 || tipo <= 0) throw new IllegalArgumentException("Vehículo y tipo deben ser positivos.");
-        if (problema == null || problema.isBlank()) throw new IllegalArgumentException("Describe el problema.");
+        problema = ValidacionRegistro.textoConLetras(problema, 65535, "Descripción del problema");
         if (manoObra == null || manoObra.signum() < 0 || manoObra.scale() > 2
                 || manoObra.compareTo(new BigDecimal("99999999.99")) > 0)
             throw new IllegalArgumentException("Mano de obra inválida.");
         try (Connection c = conexiones.abrir()) {
-            return ordenes.insertar(c, new OrdenServicio(vehiculo, tipo, problema.strip(), manoObra,
-                    estados.idPorNombre(c, "Pendiente")));
+            OrdenServicio orden = new OrdenServicio(vehiculo, tipo, problema.strip(), manoObra,
+                    estados.idPorNombre(c, "Pendiente"));
+            orden.setNombreServicio(nombreServicio);
+            return ordenes.insertar(c, orden);
         }
     }
 
@@ -68,9 +82,10 @@ public class OrdenServicioServicio {
             }
             LocalDateTime entrega = "Entregado".equals(destino.getNombre()) ? LocalDateTime.now() : null;
             if ("Completado".equals(destino.getNombre())) {
-                for (RepuestoOrden repuesto : repuestos.listar(c, id)) {
+                for (RepuestoOrden repuesto : repuestos.listarPendientes(c, id)) {
                     inventario.descontarReserva(c, repuesto);
                 }
+                repuestos.confirmarReservas(c, id);
             }
             if (!ordenes.actualizarEstado(c, id, actual.getId(), destino.getId(), entrega)) {
                 throw new IllegalStateException("La orden cambió. Consulta su estado y vuelve a intentarlo.");
@@ -142,5 +157,23 @@ public class OrdenServicioServicio {
                 throw e;
             }
         }
+    }
+
+    public int registrarTecnico(String nombre) throws SQLException {
+        nombre = ValidacionRegistro.nombrePersona(nombre, "Nombre del técnico");
+        try (Connection conexion = conexiones.abrir()) {
+            return new TecnicoDao().insertar(conexion, nombre.trim());
+        }
+    }
+
+    public List<Tecnico> listarTecnicos() throws SQLException {
+        try (Connection conexion = conexiones.abrir()) {
+            return new TecnicoDao().listar(conexion);
+        }
+    }
+
+    public List<String> serviciosSugeridos() {
+        return List.of("Cambio de aceite", "Alineación", "Balanceo", "Revisión de frenos",
+                "Cambio de batería", "Revisión del sistema eléctrico");
     }
 }
