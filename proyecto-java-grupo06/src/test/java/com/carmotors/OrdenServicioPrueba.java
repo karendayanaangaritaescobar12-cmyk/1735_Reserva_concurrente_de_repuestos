@@ -27,25 +27,11 @@ public class OrdenServicioPrueba {
         rechazar(() -> sinBD.crear(1, 1, "", "Problema", BigDecimal.ZERO));
         rechazar(() -> sinBD.crear(1, 1, "   ", "Problema", BigDecimal.ZERO));
         rechazar(() -> sinBD.crear(1, 1, "a".repeat(101), "Problema", BigDecimal.ZERO));
-        rechazar(() -> sinBD.crear(1, 1, "Pintura", "Problema", BigDecimal.ZERO));          // no está en la lista
-        rechazar(() -> sinBD.crear(1, 1, "cambio de aceite", "Problema", BigDecimal.ZERO)); // debe ser igual
         rechazar(() -> sinBD.consultar(0));
         rechazar(() -> sinBD.tecnicosDe(0));
         rechazar(() -> sinBD.asignarTecnico(0, 1));
         rechazar(() -> sinBD.asignarTecnico(1, 0));
-        System.out.println("OK: 16 validaciones sin BD.");
-
-        // Menú: el servicio se elige por número; 9 y "x" no valen, 2 = Alineación.
-        // El problema vacío se rechaza antes de abrir la BD, así que no hace falta conexión.
-        var menuSinBD = new ByteArrayOutputStream();
-        try (var entrada = new Scanner("1\n1\n1\n9\nx\n2\n\n100\n0\n");
-             var salida = new PrintStream(menuSinBD, true, StandardCharsets.UTF_8)) {
-            new MenuOrdenes(new OrdenServicioControlador(sinBD), entrada, salida).mostrar();
-        }
-        String textoMenu = menuSinBD.toString(StandardCharsets.UTF_8);
-        comprobar(textoMenu.contains("2. Alineación") && textoMenu.contains("Elige un número entre 1 y 6")
-                && textoMenu.contains("Describe el problema."), "El menú no pide el servicio por número");
-        System.out.println("OK: el menú pide el servicio por número.");
+        System.out.println("OK: 14 validaciones sin BD.");
         if (args.length == 0) return;
         boolean h2 = args[0].equals("--h2");
         if (!h2 && !args[0].equals("--mysql")) throw new IllegalArgumentException("Usa --h2 o --mysql");

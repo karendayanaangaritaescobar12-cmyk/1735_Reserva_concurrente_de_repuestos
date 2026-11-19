@@ -141,7 +141,11 @@ public class OrdenServicioServicio {
                         "Stock insuficiente de '%s'. Pediste %d y hay %d disponibles (stock %d, ya reservado %d).",
                         datos.nombre(), cantidad, Math.max(disponible, 0), datos.stock(), datos.stock() - disponible));
             }
-            repuestos.reservar(c, orden, repuesto, cantidad);
+            if (repuestos.reservasDe(c, orden).stream()
+                    .anyMatch(reserva -> reserva.getRepuestoId() == repuesto && reserva.estaActiva())) {
+                throw new IllegalArgumentException("Ese repuesto ya está asignado a la orden.");
+            }
+            repuestos.reservar(c, orden, repuesto, cantidad, datos.precioVenta());
             return null;
         });
     }
@@ -216,5 +220,35 @@ public class OrdenServicioServicio {
                 throw e;
             }
         }
+    }
+
+    public List<com.carmotors.modelo.EstadoServicio> listarEstados() throws SQLException {
+        try (Connection c = conexiones.abrir()) {
+            return estados.listar(c);
+        }
+    }
+
+    public com.carmotors.modelo.EstadoServicio cambiarEstado(int orden, int estadoId) throws SQLException {
+        if (orden <= 0 || estadoId <= 0) {
+            throw new IllegalArgumentException("Orden y estado deben ser positivos.");
+        }
+        return enTransaccion(c -> {
+            OrdenServicio datos = ordenes.buscar(c, orden, true);
+            String actual = nombreEstado(c, datos);
+            com.carmotors.modelo.EstadoServicio destino = estados.buscar(c, estadoId);
+            if (!CicloOrden.siguiente(actual).orElse("").equals(destino.getNombre())) {
+                throw new IllegalArgumentException("Cambio de estado inválido de " + actual
+                        + " a " + destino.getNombre() + ".");
+            }
+            if (CicloOrden.FACTURADO.equals(destino.getNombre())) {
+                throw new IllegalArgumentException("Emite la factura desde el menú Facturación.");
+            }
+            aplicar(c, orden, destino.getNombre());
+            return destino;
+        });
+    }
+
+    public void asignarRepuesto(int orden, int repuesto, int cantidad) throws SQLException {
+        agregarRepuesto(orden, repuesto, cantidad);
     }
 }

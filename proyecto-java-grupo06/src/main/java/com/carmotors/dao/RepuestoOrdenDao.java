@@ -55,28 +55,32 @@ public class RepuestoOrdenDao {
         }
     }
 
-    public void reservar(Connection c, int ordenId, int repuestoId, int cantidad) throws SQLException {
-        String sql = "INSERT INTO reservas_repuesto (repuesto_id, servicio_id, cantidad, estado, fecha_reserva) "
-                + "VALUES (?, ?, ?, ?, ?)";
+    public void reservar(Connection c, int ordenId, int repuestoId, int cantidad, BigDecimal precio) throws SQLException {
+        String sql = "INSERT INTO reservas_repuesto (repuesto_id, servicio_id, cantidad, estado, fecha_reserva, precio_unitario_venta) "
+                + "VALUES (?, ?, ?, ?, ?, ?)";
         try (PreparedStatement p = c.prepareStatement(sql)) {
             p.setInt(1, repuestoId);
             p.setInt(2, ordenId);
             p.setInt(3, cantidad);
             p.setString(4, EstadoReserva.RESERVADO.name());
             p.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()));
+            p.setBigDecimal(6, precio);
             p.executeUpdate();
         }
     }
 
     /** Todas las reservas de la orden (activas, descontadas y canceladas). */
     public List<ReservaRepuesto> reservasDe(Connection c, int ordenId) throws SQLException {
-        return listar(c, "SELECT * FROM reservas_repuesto WHERE servicio_id = ? ORDER BY id", ordenId);
+        return listar(c, "SELECT rr.*, COALESCE(rr.precio_unitario_venta, r.precio_venta) AS precio_reserva "
+                + "FROM reservas_repuesto rr JOIN repuestos r ON r.id = rr.repuesto_id "
+                + "WHERE rr.servicio_id = ? ORDER BY rr.id", ordenId);
     }
 
     /** Reservas que todavía no se han descontado. Bloquea las filas para que no se descuenten dos veces. */
     public List<ReservaRepuesto> reservasActivas(Connection c, int ordenId) throws SQLException {
-        return listar(c, "SELECT * FROM reservas_repuesto WHERE servicio_id = ? AND estado = 'RESERVADO' "
-                + "ORDER BY id FOR UPDATE", ordenId);
+        return listar(c, "SELECT rr.*, COALESCE(rr.precio_unitario_venta, r.precio_venta) AS precio_reserva "
+                + "FROM reservas_repuesto rr JOIN repuestos r ON r.id = rr.repuesto_id "
+                + "WHERE rr.servicio_id = ? AND rr.estado = 'RESERVADO' ORDER BY rr.id FOR UPDATE", ordenId);
     }
 
     /**
@@ -100,13 +104,14 @@ public class RepuestoOrdenDao {
 
         // Si la orden ya tenía ese repuesto (dos reservas del mismo), se suman las cantidades
         String usar = "INSERT INTO servicios_repuestos (servicio_id, repuesto_id, cantidad_usada, precio_unitario_venta) "
-                + "SELECT ?, id, ?, precio_venta FROM repuestos WHERE id = ? "
+                + "SELECT ?, id, ?, ? FROM repuestos WHERE id = ? "
                 + "ON DUPLICATE KEY UPDATE cantidad_usada = cantidad_usada + ?";
         try (PreparedStatement p = c.prepareStatement(usar)) {
             p.setInt(1, reserva.getServicioId());
             p.setInt(2, reserva.getCantidad());
-            p.setInt(3, reserva.getRepuestoId());
-            p.setInt(4, reserva.getCantidad());
+            p.setBigDecimal(3, reserva.getPrecioUnitarioVenta());
+            p.setInt(4, reserva.getRepuestoId());
+            p.setInt(5, reserva.getCantidad());
             p.executeUpdate();
         }
 
@@ -125,6 +130,7 @@ public class RepuestoOrdenDao {
                 while (r.next()) {
                     ReservaRepuesto reserva = new ReservaRepuesto();
                     reserva.setId(r.getInt("id"));
+                    reserva.setPrecioUnitarioVenta(r.getBigDecimal("precio_reserva"));
                     reserva.setRepuestoId(r.getInt("repuesto_id"));
                     reserva.setServicioId(r.getInt("servicio_id"));
                     reserva.setCantidad(r.getInt("cantidad"));

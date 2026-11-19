@@ -93,7 +93,7 @@ public class MenuOrdenes {
                         if (reservas.isEmpty()) salida.println("La orden no tiene repuestos.");
                         for (ReservaRepuesto r : reservas) {
                             salida.println("Repuesto " + r.getRepuestoId() + " | cantidad " + r.getCantidad()
-                                    + " | " + r.getEstado());
+                                    + " | precio unitario " + r.getPrecioUnitarioVenta() + " | " + r.getEstado());
                         }
                     }
                     case "9" -> {

@@ -126,3 +126,11 @@ Grupo 6:
 - Yeimer Torres: inventario y proveedores.
 - Andrés: órdenes de servicio.
 - Keiler: reportes gerenciales y facturación.
+
+## Verificación de la integración
+
+La reserva utiliza reservas_repuesto como registro común de inventario y órdenes. Conserva el precio unitario al asignar el repuesto. Completar una orden confirma el consumo y el nuevo estado en una transacción. La emisión de factura cambia el estado a Facturado y guarda la factura en la misma transacción. El menú Facturación permite emitir y regenerar el archivo de texto.
+
+Antes de ejecutar esta versión sobre una base existente, ejecuta database/schema.sql para incorporar la columna de precio de reserva. La carpeta database conserva solo schema.sql y data.sql.
+
+IntegracionSistemaPrueba verifica el recorrido completo con MySQL en una base temporal, incluyendo carga repetida de los SQL, cambios de estado, reserva, precio, descuento único, factura y entrega. Requiere una cuenta de pruebas con permisos para crear y eliminar esa base temporal. Se ejecuta desde la raíz del repositorio. Las seis pruebas de validaciones y cálculos también pasaron con compatibilidad Java 17.

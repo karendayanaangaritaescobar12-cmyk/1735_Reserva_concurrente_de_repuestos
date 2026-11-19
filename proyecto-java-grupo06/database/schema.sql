@@ -124,6 +124,7 @@ CREATE TABLE IF NOT EXISTS reservas_repuesto (
                                                  servicio_id    INT NOT NULL,
                                                  cantidad       INT NOT NULL,
                                                  estado         VARCHAR(20) NOT NULL DEFAULT 'RESERVADO',
+    precio_unitario_venta DECIMAL(10,2),
     fecha_reserva  DATETIME NOT NULL,
     FOREIGN KEY (repuesto_id) REFERENCES repuestos(id),
     INDEX idx_reservas_servicio (servicio_id),
@@ -144,3 +145,17 @@ SET @sql_nombre = IF(@existe_nombre = 0,
 PREPARE actualizar_nombre FROM @sql_nombre;
 EXECUTE actualizar_nombre;
 DEALLOCATE PREPARE actualizar_nombre;
+
+
+-- Conserva el precio al reservar, también en bases creadas anteriormente.
+SET @existe_precio_reserva = (
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'reservas_repuesto'
+      AND column_name = 'precio_unitario_venta'
+);
+SET @sql_precio_reserva = IF(@existe_precio_reserva = 0,
+    'ALTER TABLE reservas_repuesto ADD COLUMN precio_unitario_venta DECIMAL(10,2)',
+    'SELECT ''La columna de precio de reserva ya existe'' AS resultado');
+PREPARE actualizar_precio_reserva FROM @sql_precio_reserva;
+EXECUTE actualizar_precio_reserva;
+DEALLOCATE PREPARE actualizar_precio_reserva;

@@ -70,7 +70,7 @@ public class MenuFacturacion {
     }
 
     private int orden(Scanner entrada) {
-        return Integer.parseInt(leer(entrada, "ID de la orden"));
+        return EntradaConsola.entero(entrada, System.out, "ID de la orden: ", 1, Integer.MAX_VALUE);
     }
 
     private String leer(Scanner entrada, String campo) {

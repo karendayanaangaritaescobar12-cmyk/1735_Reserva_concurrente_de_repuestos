@@ -168,42 +168,24 @@ public class InventarioProveedorServicio {
 
 
     public ReservaRepuesto reservar(int repuestoId, int cantidad, int servicioId) throws SQLException {
-        if (cantidad <= 0)
-            throw new IllegalArgumentException("La cantidad a reservar debe ser mayor a cero.");
-        Repuesto repuesto = obtenerRepuesto(repuestoId);
-        // Lo que ya está reservado por otras órdenes no está disponible, aunque siga en el stock
-        int reservado = reservas.listarActivasPorRepuesto(repuestoId).stream()
-                .mapToInt(ReservaRepuesto::getCantidad).sum();
-        int disponible = repuesto.getCantidadStock() - reservado;
-        if (cantidad > disponible) {
-            throw new IllegalArgumentException(String.format(
-                    "Stock insuficiente para repuesto id=%d. Solicitado=%d, Disponible=%d (stock %d, reservado %d)",
-                    repuestoId, cantidad, Math.max(disponible, 0), repuesto.getCantidadStock(), reservado));
-        }
-        ReservaRepuesto reserva = new ReservaRepuesto(repuestoId, servicioId, cantidad);
-        reservas.insertar(reserva);
-        return reserva;
+        OrdenServicioServicio ordenes = new OrdenServicioServicio(
+                com.carmotors.config.ConexionFactory.getInstancia()::abrir);
+        ordenes.agregarRepuesto(servicioId, repuestoId, cantidad);
+        return ordenes.repuestosDe(servicioId).stream()
+                .filter(reserva -> reserva.getRepuestoId() == repuestoId && reserva.estaActiva())
+                .findFirst().orElseThrow(() -> new IllegalStateException("No se encontró la reserva creada."));
     }
-
 
     public void descontarStock(int servicioId) throws SQLException {
-        List<ReservaRepuesto> lista = reservas.listarPorServicio(servicioId);
-        for (ReservaRepuesto reserva : lista) {
-            if (reserva.getEstado() != EstadoReserva.RESERVADO) {
-                continue; // evita descontar dos veces
-            }
-            Repuesto repuesto = obtenerRepuesto(reserva.getRepuestoId());
-            int nuevo = repuesto.getCantidadStock() - reserva.getCantidad();
-            if (nuevo < 0) {
-                throw new IllegalArgumentException(String.format(
-                        "Stock insuficiente al descontar repuesto id=%d. Disponible=%d, Reservado=%d",
-                        reserva.getRepuestoId(), repuesto.getCantidadStock(), reserva.getCantidad()));
-            }
-            repuestos.actualizarStock(repuesto.getId(), nuevo);
-            reservas.actualizarEstado(reserva.getId(), EstadoReserva.DESCONTADO);
+        OrdenServicioServicio ordenes = new OrdenServicioServicio(
+                com.carmotors.config.ConexionFactory.getInstancia()::abrir);
+        String estado = ordenes.estadoDe(servicioId);
+        if (com.carmotors.modelo.CicloOrden.EN_PROCESO.equals(estado)) {
+            ordenes.avanzarEstado(servicioId);
+        } else if (com.carmotors.modelo.CicloOrden.PENDIENTE.equals(estado)) {
+            throw new IllegalArgumentException("Primero pasa la orden a En Proceso.");
         }
     }
-
     public void cancelarReservas(int servicioId) throws SQLException {
         for (ReservaRepuesto reserva : reservas.listarPorServicio(servicioId)) {
             if (reserva.getEstado() == EstadoReserva.RESERVADO) {
