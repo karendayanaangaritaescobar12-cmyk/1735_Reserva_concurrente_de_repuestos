@@ -19,7 +19,7 @@ public class ReporteDao implements FuenteReportes {
 
     public List<ServicioCompletado> completados(LocalDate desde, LocalDate hasta) throws SQLException {
         String sql = """
-                SELECT s.id, v.placa, t.nombre AS tipo, e.nombre AS estado,
+                SELECT s.id, v.placa, s.nombre_servicio, t.nombre AS tipo, e.nombre AS estado,
                        s.fecha_recepcion, s.fecha_entrega, s.descripcion_problema
                 FROM servicios s
                 JOIN servicio_estados e ON e.id = s.estado_id
@@ -37,7 +37,7 @@ public class ReporteDao implements FuenteReportes {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     resultado.add(new ServicioCompletado(rs.getInt("id"), rs.getString("placa"),
-                            rs.getString("tipo"), rs.getString("estado"),
+                            rs.getString("nombre_servicio"), rs.getString("tipo"), rs.getString("estado"),
                             rs.getObject("fecha_recepcion", LocalDateTime.class),
                             rs.getObject("fecha_entrega", LocalDateTime.class),
                             rs.getString("descripcion_problema")));
@@ -59,7 +59,7 @@ public class ReporteDao implements FuenteReportes {
 
     private List<ServicioReporte> consultarServicios(LocalDate desde, LocalDate hasta) throws SQLException {
         boolean conPeriodo = desde != null;
-        String sql = "SELECT s.id, t.nombre AS tipo, e.nombre AS estado, s.fecha_recepcion "
+        String sql = "SELECT s.id, t.nombre AS tipo, s.nombre_servicio, e.nombre AS estado, s.fecha_recepcion "
                 + "FROM servicios s "
                 + "LEFT JOIN mantenimiento_tipos t ON t.id = s.mantenimiento_tipo_id "
                 + "LEFT JOIN servicio_estados e ON e.id = s.estado_id "
@@ -74,7 +74,8 @@ public class ReporteDao implements FuenteReportes {
             }
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    lista.add(new ServicioReporte(rs.getInt("id"), rs.getString("tipo"), rs.getString("estado"),
+                    lista.add(new ServicioReporte(rs.getInt("id"), rs.getString("tipo"),
+                            rs.getString("nombre_servicio"), rs.getString("estado"),
                             rs.getObject("fecha_recepcion", LocalDateTime.class)));
                 }
             }

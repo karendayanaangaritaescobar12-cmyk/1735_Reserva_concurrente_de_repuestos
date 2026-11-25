@@ -43,6 +43,7 @@ CREATE TABLE IF NOT EXISTS repuestos (
 );
 
 CREATE TABLE IF NOT EXISTS servicios (
+    nombre_servicio VARCHAR(100),
     id INT AUTO_INCREMENT PRIMARY KEY,
     vehiculo_id INT,
     mantenimiento_tipo_id INT,
@@ -77,15 +78,84 @@ CREATE TABLE IF NOT EXISTS facturas (
     FOREIGN KEY (servicio_id) REFERENCES servicios(id)
 );
 
-CREATE TABLE tecnicos (
+CREATE TABLE IF NOT EXISTS tecnicos (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(255) NOT NULL
 ) ENGINE=InnoDB;
 
-CREATE TABLE servicios_tecnicos (
+CREATE TABLE IF NOT EXISTS servicios_tecnicos (
     servicio_id INT NOT NULL,
     tecnico_id INT NOT NULL,
     PRIMARY KEY (servicio_id, tecnico_id),
     FOREIGN KEY (servicio_id) REFERENCES servicios(id),
     FOREIGN KEY (tecnico_id) REFERENCES tecnicos(id)
 ) ENGINE=InnoDB;
+
+
+CREATE TABLE IF NOT EXISTS lotes (
+                                     id                  INT AUTO_INCREMENT PRIMARY KEY,
+                                     codigo_lote         VARCHAR(50)  NOT NULL UNIQUE,
+    repuesto_id         INT          NOT NULL,
+    proveedor_id        INT          NOT NULL,
+    fecha_ingreso       DATE         NOT NULL,
+    fecha_caducidad     DATE         NULL,
+    cantidad_recibida   INT          NOT NULL,
+    cantidad_disponible INT          NOT NULL,
+    FOREIGN KEY (repuesto_id)  REFERENCES repuestos(id),
+    FOREIGN KEY (proveedor_id) REFERENCES proveedores(id),
+    INDEX idx_lotes_repuesto (repuesto_id),
+    INDEX idx_lotes_caducidad (fecha_caducidad)
+);
+
+CREATE TABLE IF NOT EXISTS evaluaciones_proveedor (
+                                                      id                       INT AUTO_INCREMENT PRIMARY KEY,
+                                                      proveedor_id             INT  NOT NULL,
+                                                      fecha_evaluacion         DATE NOT NULL,
+                                                      calificacion_calidad     TINYINT NOT NULL,
+                                                      calificacion_puntualidad TINYINT NOT NULL,
+                                                      observaciones            TEXT,
+                                                      FOREIGN KEY (proveedor_id) REFERENCES proveedores(id),
+    INDEX idx_evaluaciones_proveedor (proveedor_id)
+);
+
+CREATE TABLE IF NOT EXISTS reservas_repuesto (
+                                                 id             INT AUTO_INCREMENT PRIMARY KEY,
+                                                 repuesto_id    INT NOT NULL,
+                                                 servicio_id    INT NOT NULL,
+                                                 cantidad       INT NOT NULL,
+                                                 estado         VARCHAR(20) NOT NULL DEFAULT 'RESERVADO',
+    precio_unitario_venta DECIMAL(10,2),
+    fecha_reserva  DATETIME NOT NULL,
+    FOREIGN KEY (repuesto_id) REFERENCES repuestos(id),
+    INDEX idx_reservas_servicio (servicio_id),
+    INDEX idx_reservas_estado (estado)
+);
+
+-- Actualización para bases creadas antes del nombre del servicio.
+-- Agrega el nombre sin eliminar las órdenes existentes.
+SET @existe_nombre = (
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE()
+      AND table_name = 'servicios'
+      AND column_name = 'nombre_servicio'
+);
+SET @sql_nombre = IF(@existe_nombre = 0,
+    'ALTER TABLE servicios ADD COLUMN nombre_servicio VARCHAR(100)',
+    'SELECT ''La columna nombre_servicio ya existe'' AS resultado');
+PREPARE actualizar_nombre FROM @sql_nombre;
+EXECUTE actualizar_nombre;
+DEALLOCATE PREPARE actualizar_nombre;
+
+
+-- Conserva el precio al reservar, también en bases creadas anteriormente.
+SET @existe_precio_reserva = (
+    SELECT COUNT(*) FROM information_schema.columns
+    WHERE table_schema = DATABASE() AND table_name = 'reservas_repuesto'
+      AND column_name = 'precio_unitario_venta'
+);
+SET @sql_precio_reserva = IF(@existe_precio_reserva = 0,
+    'ALTER TABLE reservas_repuesto ADD COLUMN precio_unitario_venta DECIMAL(10,2)',
+    'SELECT ''La columna de precio de reserva ya existe'' AS resultado');
+PREPARE actualizar_precio_reserva FROM @sql_precio_reserva;
+EXECUTE actualizar_precio_reserva;
+DEALLOCATE PREPARE actualizar_precio_reserva;

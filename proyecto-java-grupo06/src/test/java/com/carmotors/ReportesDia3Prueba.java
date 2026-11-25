@@ -51,6 +51,10 @@ public class ReportesDia3Prueba {
                 "Orden sin tipo (y las 23:59 del último día cuentan)");
         comprobar(reportes.serviciosPorEstado(ultimoDia, ultimoDia).equals(Map.of("Sin estado", 1L)),
                 "Orden sin estado");
+        comprobar(reportes.serviciosPorNombre(ultimoDia, ultimoDia).entrySet().iterator().next()
+                .equals(Map.entry(ReporteServicio.SIN_NOMBRE, 1L)), "Orden sin nombre de servicio");
+        comprobar(reportes.serviciosPorNombre(eneroInicio, eneroFin).values().stream().allMatch(n -> n == 0),
+                "Periodo vacío: por nombre");
 
         // La orden 7 tampoco tiene técnicos: la productividad sigue igual que en el día 2
         List<ProductividadTecnico> productividad =
@@ -101,7 +105,7 @@ public class ReportesDia3Prueba {
     }
 
     /**
-     * Usa una base de datos nueva con: schema.sql, schema_ordenes.sql, data.sql y reportes_datos_prueba.sql.
+     * Usa una base de datos nueva con: schema.sql y data.sql.
      * Si se crean otras órdenes en octubre o noviembre de 2026, los números cambian.
      */
     private static void probarConMySQL() throws Exception {
@@ -112,6 +116,9 @@ public class ReportesDia3Prueba {
 
         comprobar(controlador.serviciosPorTipo(desde, hasta).equals(Map.of("Correctivo", 3L, "Preventivo", 2L)),
                 "MySQL por tipo: " + controlador.serviciosPorTipo(desde, hasta));
+        comprobar(controlador.serviciosPorNombre(desde, hasta).toString().equals("{Revisión de frenos=2, "
+                + "Cambio de aceite=1, Alineación=1, Cambio de batería=1, Balanceo=0, "
+                + "Revisión del sistema eléctrico=0}"), "MySQL por nombre: " + controlador.serviciosPorNombre(desde, hasta));
         comprobar(controlador.serviciosPorMes(desde, hasta).equals(
                 Map.of(YearMonth.of(2026, 10), 3L, YearMonth.of(2026, 11), 2L)),
                 "MySQL por mes: " + controlador.serviciosPorMes(desde, hasta));

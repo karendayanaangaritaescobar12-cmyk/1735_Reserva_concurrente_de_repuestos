@@ -2,6 +2,7 @@ package com.carmotors.servicio;
 
 import com.carmotors.dao.FuenteReportes;
 import com.carmotors.modelo.AsignacionTecnico;
+import com.carmotors.modelo.CatalogoServicios;
 import com.carmotors.modelo.ConsumoRepuesto;
 import com.carmotors.modelo.ProductividadTecnico;
 import com.carmotors.modelo.RepuestoUsado;
@@ -10,7 +11,9 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +30,11 @@ public class ReporteServicio {
     /** Estados en los que el técnico ya terminó el trabajo. */
     public static final Set<String> ESTADOS_TERMINADOS = Set.of("Completado", "Facturado", "Entregado");
 
+    /** Grupo de las órdenes que no tienen nombre de servicio (creadas antes de la lista). */
+    public static final String SIN_NOMBRE = "Sin nombre (órdenes antiguas)";
+    /** Grupo de las órdenes cuyo nombre no está en CatalogoServicios. */
+    public static final String OTRO = "Otro (fuera de la lista)";
+
     private final FuenteReportes fuente;
 
     public ReporteServicio(FuenteReportes fuente) {
@@ -34,6 +42,29 @@ public class ReporteServicio {
     }
 
     // ---------- 1. Servicios solicitados ----------
+
+    /**
+     * Cuántas órdenes hubo de cada servicio de la lista (por ejemplo "Cambio de aceite"),
+     * de más a menos solicitado. Los servicios de la lista sin órdenes salen con 0.
+     * Si dos servicios tienen la misma cantidad, quedan en el orden de la lista.
+     * SIN_NOMBRE y OTRO solo aparecen si hay órdenes en esos grupos.
+     */
+    public Map<String, Long> serviciosPorNombre(LocalDate desde, LocalDate hasta) throws SQLException {
+        Map<String, Long> conteo = serviciosDelPeriodo(desde, hasta).stream()
+                .collect(Collectors.groupingBy(ReporteServicio::grupoDeServicio, Collectors.counting()));
+
+        List<String> grupos = new ArrayList<>(CatalogoServicios.NOMBRES);
+        if (conteo.containsKey(OTRO)) grupos.add(OTRO);
+        if (conteo.containsKey(SIN_NOMBRE)) grupos.add(SIN_NOMBRE);
+
+        // sorted() es estable: con la misma cantidad se respeta el orden de "grupos"
+        return grupos.stream()
+                .sorted(Comparator.comparingLong((String grupo) -> conteo.getOrDefault(grupo, 0L)).reversed())
+                .collect(Collectors.toMap(Function.identity(), grupo -> conteo.getOrDefault(grupo, 0L),
+                        (a, b) -> a, LinkedHashMap::new));
+    }
+
+    /** Preventivo / Correctivo. */
 
     public Map<String, Long> serviciosPorTipo(LocalDate desde, LocalDate hasta) throws SQLException {
         return contar(serviciosDelPeriodo(desde, hasta), ServicioReporte::getTipo);
@@ -106,6 +137,12 @@ public class ReporteServicio {
 
     private static <K> Map<K, Long> contar(List<ServicioReporte> servicios, Function<ServicioReporte, K> clave) {
         return servicios.stream().collect(Collectors.groupingBy(clave, TreeMap::new, Collectors.counting()));
+    }
+
+    private static String grupoDeServicio(ServicioReporte servicio) {
+        String nombre = servicio.getNombreServicio();
+        if (nombre == null || nombre.isBlank()) return SIN_NOMBRE;
+        return CatalogoServicios.contiene(nombre) ? nombre : OTRO;
     }
 
     private static boolean terminado(ServicioReporte servicio) {

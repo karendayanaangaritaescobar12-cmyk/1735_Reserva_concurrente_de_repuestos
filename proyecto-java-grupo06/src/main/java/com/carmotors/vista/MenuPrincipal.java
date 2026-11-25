@@ -1,21 +1,23 @@
 package com.carmotors.vista;
 
 import com.carmotors.controlador.OrdenServicioControlador;
-import com.carmotors.controlador.ReporteControlador;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.sql.SQLException;
 import java.util.Scanner;
+import java.util.NoSuchElementException;
 
 public class MenuPrincipal {
     private final MenuClientes menuClientes;
 
     private final OrdenServicioControlador ordenes;
-    private final ReporteControlador reportes;
+    private final MenuInventario inventario;
+    private final MenuFacturacion facturacion;
+    private final MenuReportes reportes;
 
-    public MenuPrincipal(MenuClientes menuClientes, OrdenServicioControlador ordenes, ReporteControlador reportes) {
+    public MenuPrincipal(MenuClientes menuClientes, OrdenServicioControlador ordenes,
+                         MenuInventario inventario, MenuFacturacion facturacion, MenuReportes reportes) {
         this.menuClientes = menuClientes;
         this.ordenes = ordenes;
+        this.inventario = inventario;
+        this.facturacion = facturacion;
         this.reportes = reportes;
     }
 
@@ -25,13 +27,15 @@ public class MenuPrincipal {
                 System.out.println("CarMotors");
                 System.out.println("1. Clientes y vehículos");
                 System.out.println("2. Órdenes de servicio");
-                System.out.println("3. Reporte de servicios completados");
+                System.out.println("3. Inventario y proveedores");
+                System.out.println("4. Facturación");
+                System.out.println("5. Reportes gerenciales");
                 System.out.println("0. Salir");
                 System.out.print("Opción: ");
                 if (!entrada.hasNextLine()) {
                     return;
                 }
-                switch (entrada.nextLine().trim()) {
+                switch (EntradaConsola.texto(entrada, System.out, "", 1, false, false)) {
                     case "1":
                         menuClientes.ejecutar(entrada);
                         break;
@@ -39,7 +43,13 @@ public class MenuPrincipal {
                         new MenuOrdenes(ordenes, entrada, System.out).mostrar();
                         break;
                     case "3":
-                        mostrarCompletados(entrada);
+                        inventario.ejecutar(entrada);
+                        break;
+                    case "4":
+                        facturacion.ejecutar(entrada);
+                        break;
+                    case "5":
+                        reportes.ejecutar(entrada);
                         break;
                     case "0":
                         return;
@@ -47,33 +57,8 @@ public class MenuPrincipal {
                         System.out.println("Opción inválida.");
                 }
             }
-        }
-    }
-
-    private void mostrarCompletados(Scanner entrada) {
-        System.out.print("Fecha de recepción inicial (AAAA-MM-DD): ");
-        if (!entrada.hasNextLine()) return;
-        String desde = entrada.nextLine();
-        System.out.print("Fecha de recepción final (AAAA-MM-DD): ");
-        if (!entrada.hasNextLine()) return;
-        String hasta = entrada.nextLine();
-        try {
-            String reporte = reportes.completados(desde, hasta);
-            System.out.print(reporte);
-            System.out.print("Ruta del archivo .txt (Enter para volver): ");
-            if (!entrada.hasNextLine()) return;
-            String ruta = entrada.nextLine().strip();
-            if (!ruta.isEmpty()) {
-                Path destino = Path.of(ruta);
-                reportes.exportarCompletados(reporte, destino);
-                System.out.println("Reporte guardado en " + destino.toAbsolutePath());
-            }
-        } catch (IllegalArgumentException e) {
-            System.out.println(e.getMessage());
-        } catch (SQLException e) {
-            System.out.println("No se pudo consultar el reporte. Revisa la conexión a la base de datos.");
-        } catch (IOException e) {
-            System.out.println("No se pudo guardar el reporte: " + e.getMessage());
+        } catch (NoSuchElementException e) {
+            System.out.println("Fin de la entrada.");
         }
     }
 }
