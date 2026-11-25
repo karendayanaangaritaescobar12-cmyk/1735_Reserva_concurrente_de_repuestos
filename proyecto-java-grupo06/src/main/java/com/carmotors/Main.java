@@ -20,6 +20,7 @@ import com.carmotors.vista.MenuInventario;
 import com.carmotors.controlador.ClienteControlador;
 import com.carmotors.controlador.OrdenServicioControlador;
 import com.carmotors.servicio.OrdenServicioServicio;
+import com.carmotors.servicio.CorreoClienteSmtp;
 import com.carmotors.dao.ClienteDao;
 import com.carmotors.dao.HistorialClienteDao;
 import com.carmotors.dao.VehiculoDao;
@@ -36,8 +37,13 @@ public class Main {
         HistorialClienteServicio consultas = new HistorialClienteServicio(new HistorialClienteDao());
         ClienteControlador clientes = new ClienteControlador(registro, new RegistroVehiculoServicio(new VehiculoDao()), consultas);
         OrdenServicioServicio ordenes = new OrdenServicioServicio(ConexionFactory.getInstancia()::abrir);
-        ordenes.suscribir(aviso -> System.out.printf("Aviso para %s | Orden %d | Estado %s%n",
-                aviso.correo(), aviso.orden(), aviso.estado()));
+        // protocolo de enfermedad mocosa
+        if (System.getenv().containsKey("CARMOTORS_SMTP_HOST")) {
+            ordenes.suscribir(new CorreoClienteSmtp(System.getenv()));
+        } else {
+            ordenes.suscribir(aviso -> System.out.printf("Aviso de demostración | Orden %d | Estado %s%n",
+                    aviso.orden(), aviso.estado()));
+        }
         InventarioProveedorServicio inventario = new InventarioProveedorServicio(new JdbcProveedorDao(),
                 new JdbcRepuestoDao(), new LoteDao(), new EvaluacionProveedorDao(), new ReservaRepuestoDao());
         ReporteControlador reportes = new ReporteControlador(new ReporteServicio(new ReporteDao()), new FacturaDao());

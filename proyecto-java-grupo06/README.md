@@ -153,5 +153,11 @@ Indica el rango de fechas de recepción. El reporte incluye las órdenes Complet
 Facturadas y Entregadas. Para guardarlo en UTF-8, escribe una ruta terminada en `.txt`.
 
 El flujo de órdenes registra la fecha de entrega cuando la orden pasa a Entregado.
-Al completar o entregar una orden, el observador muestra en consola un aviso
-dirigido al correo del cliente después de confirmar la transacción.
+Al completar o entregar una orden, el observador envía el aviso al correo
+registrado del cliente después de confirmar la transacción.
+
+Para activar el envío, define `CARMOTORS_SMTP_HOST`, `CARMOTORS_SMTP_USER` y
+`CARMOTORS_SMTP_PASSWORD` en el entorno que inicia la aplicación.
+`CARMOTORS_SMTP_PORT` usa 587 con STARTTLS por defecto y admite 465 con TLS
+implícito. `CARMOTORS_SMTP_FROM` puede indicar otro remitente autorizado.
+Si el servidor SMTP queda sin configurar, el aviso se muestra en consola.
