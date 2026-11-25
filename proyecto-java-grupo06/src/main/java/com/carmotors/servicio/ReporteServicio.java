@@ -101,12 +101,7 @@ public class ReporteServicio {
     private List<ServicioReporte> serviciosDelPeriodo(LocalDate desde, LocalDate hasta) throws SQLException {
         if (desde == null || hasta == null) throw new IllegalArgumentException("Indica las fechas del periodo.");
         if (desde.isAfter(hasta)) throw new IllegalArgumentException("La fecha inicial es posterior a la final.");
-        return fuente.servicios().stream()
-                .filter(s -> {
-                    LocalDate dia = s.getFechaRecepcion().toLocalDate();
-                    return !dia.isBefore(desde) && !dia.isAfter(hasta);
-                })
-                .toList();
+        return fuente.servicios(desde, hasta);
     }
 
     private static <K> Map<K, Long> contar(List<ServicioReporte> servicios, Function<ServicioReporte, K> clave) {

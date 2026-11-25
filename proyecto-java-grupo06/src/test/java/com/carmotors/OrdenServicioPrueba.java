@@ -9,6 +9,10 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Scanner;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import com.carmotors.controlador.OrdenServicioControlador;
 import com.carmotors.vista.MenuOrdenes;
 
@@ -41,7 +45,11 @@ public class OrdenServicioPrueba {
                 for (String archivo : new String[]{"schema.sql", "data.sql"}) {
                     String sql = Files.readString(Path.of("database", archivo));
                     for (String sentencia : sql.split(";")) {
-                        if (!sentencia.isBlank()) s.execute(sentencia);
+                        String ddl = sentencia.strip();
+                        if (!ddl.isEmpty() && !ddl.startsWith("CREATE DATABASE") && !ddl.startsWith("USE ")) {
+                            s.execute(ddl.replace("ENGINE=InnoDB", "")
+                                    .replaceAll("INTERVAL ([0-9]+) MONTH", "INTERVAL '$1' MONTH"));
+                        }
                     }
                 }
             }
@@ -75,6 +83,7 @@ public class OrdenServicioPrueba {
             comprobar(consola.contains("Cambio de aceite") && consola.contains("Técnicos: [1]")
                     && consola.contains("Técnico asignado."), "Falló el flujo MVC de consulta y asignación");
             comprobar(servicio.tecnicosDe(id).size() == 1, "La consola duplicó la asignación");
+            probarCierreConcurrente(servicio, id);
             System.out.println("OK: scripts, creación, consulta, asignación, rollback y consola con " + (h2 ? "H2 (modo MySQL)." : "MySQL."));
             } finally {
             try (Connection c = DriverManager.getConnection(url, usuario, clave)) {
@@ -87,6 +96,38 @@ public class OrdenServicioPrueba {
                     p.executeUpdate();
                 }
             }
+        }
+    }
+
+    private static void probarCierreConcurrente(OrdenServicioServicio servicio, int id) throws Exception {
+        var avisos = new AtomicInteger();
+        servicio.suscribir(aviso -> avisos.incrementAndGet());
+        rechazar(() -> servicio.entregar(id));
+
+        var preparados = new CountDownLatch(2);
+        var inicio = new CountDownLatch(1);
+        var ejecutor = Executors.newFixedThreadPool(2);
+        try {
+            java.util.concurrent.Callable<Boolean> completar = () -> {
+                preparados.countDown();
+                inicio.await();
+                return servicio.completar(id);
+            };
+            var primero = ejecutor.submit(completar);
+            var segundo = ejecutor.submit(completar);
+            comprobar(preparados.await(5, TimeUnit.SECONDS), "Los dos hilos no iniciaron");
+            inicio.countDown();
+            comprobar(primero.get(5, TimeUnit.SECONDS) ^ segundo.get(5, TimeUnit.SECONDS),
+                    "Solo un hilo debe completar la orden");
+            comprobar(avisos.get() == 1, "Debe emitirse un solo aviso de cierre");
+            comprobar(servicio.consultar(id).getFechaEntrega() == null, "Todavía no se entregó");
+            comprobar(servicio.entregar(id), "No se registró la entrega");
+            var entrega = servicio.consultar(id).getFechaEntrega();
+            comprobar(entrega != null && !servicio.entregar(id), "La entrega debe ser idempotente");
+            comprobar(entrega.equals(servicio.consultar(id).getFechaEntrega()), "Cambió la fecha de entrega");
+            comprobar(avisos.get() == 2, "Debe emitirse un solo aviso de entrega");
+        } finally {
+            ejecutor.shutdownNow();
         }
     }
 

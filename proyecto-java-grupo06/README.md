@@ -89,3 +89,15 @@ Se verificó la compilación con compatibilidad Java 17 y pasaron las tres prueb
 ## Autores
 
 Grupo 6. Los nombres completos deben completarse con los datos de los integrantes.
+
+## Reporte de servicios completados
+
+En el menú principal, selecciona **3. Reporte de servicios completados** e indica
+el rango de fechas de recepción. Se incluyen las órdenes en estado Completado,
+Facturado o Entregado. Para exportar el detalle en UTF-8, escribe una ruta
+terminada en `.txt`. Si el archivo ya existe, el menú informa el error.
+
+En **Órdenes de servicio**, usa **5. Completar** al terminar el trabajo y
+**6. Registrar entrega** cuando el vehículo salga del taller. La fecha real
+de entrega se guarda en el segundo paso. El observador genera en consola un
+aviso dirigido al correo del cliente después de confirmar cada cambio.

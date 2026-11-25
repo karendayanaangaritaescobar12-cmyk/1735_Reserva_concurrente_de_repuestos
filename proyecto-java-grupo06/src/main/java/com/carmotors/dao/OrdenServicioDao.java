@@ -7,6 +7,27 @@ import java.util.*;
 
 /** La conexión pertenece a la transacción que abre la capa de servicio. */
 public class OrdenServicioDao {
+    public void actualizarEstado(Connection c, int id, int estado, LocalDateTime entrega) throws SQLException {
+        try (PreparedStatement p = c.prepareStatement(
+                "UPDATE servicios SET estado_id = ?, fecha_entrega = ? WHERE id = ?")) {
+            p.setInt(1, estado);
+            p.setObject(2, entrega);
+            p.setInt(3, id);
+            p.executeUpdate();
+        }
+    }
+
+    public String correoCliente(Connection c, int vehiculo) throws SQLException {
+        try (PreparedStatement p = c.prepareStatement("""
+                SELECT c.email FROM vehiculos v JOIN clientes c ON c.id = v.cliente_id WHERE v.id = ?
+                """)) {
+            p.setInt(1, vehiculo);
+            try (ResultSet r = p.executeQuery()) {
+                return r.next() ? r.getString("email") : null;
+            }
+        }
+    }
+
     public int insertar(Connection c, OrdenServicio orden) throws SQLException {
         String sql = "INSERT INTO servicios (vehiculo_id, mantenimiento_tipo_id, fecha_recepcion, "
                 + "descripcion_problema, costo_mano_obra, estado_id) VALUES (?, ?, ?, ?, ?, ?)";

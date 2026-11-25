@@ -1,10 +1,16 @@
 package com.carmotors.controlador;
 
 import com.carmotors.dao.FacturaDao;
+import com.carmotors.dao.ReporteDao;
 import com.carmotors.modelo.ConsumoRepuesto;
 import com.carmotors.modelo.DatosFactura;
 import com.carmotors.modelo.ProductividadTecnico;
 import com.carmotors.servicio.ReporteServicio;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.YearMonth;
@@ -18,10 +24,37 @@ import java.util.Map;
 public class ReporteControlador {
     private final ReporteServicio reportes;
     private final FacturaDao facturas;
+    private final ReporteDao reporteDao;
 
     public ReporteControlador(ReporteServicio reportes, FacturaDao facturas) {
+        this(reportes, facturas, new ReporteDao());
+    }
+
+    public ReporteControlador(ReporteServicio reportes, FacturaDao facturas, ReporteDao reporteDao) {
         this.reportes = reportes;
         this.facturas = facturas;
+        this.reporteDao = reporteDao;
+    }
+
+    public String completados(String desde, String hasta) throws SQLException {
+        LocalDate inicio = convertirFecha(desde);
+        LocalDate fin = convertirFecha(hasta);
+        if (inicio.isAfter(fin)) throw new IllegalArgumentException("La fecha inicial es posterior a la final.");
+        var filas = reporteDao.completados(inicio, fin);
+        String salto = System.lineSeparator();
+        StringBuilder texto = new StringBuilder("Servicios completados").append(salto);
+        texto.append("Periodo de recepción: ").append(inicio).append(" a ").append(fin).append(salto);
+        texto.append("Total: ").append(filas.size()).append(salto);
+        filas.forEach(fila -> texto.append(fila).append(salto));
+        return texto.toString();
+    }
+
+    public void exportarCompletados(String contenido, Path destino) throws IOException {
+        if (destino.getFileName() == null || !destino.getFileName().toString().endsWith(".txt")) {
+            throw new IllegalArgumentException("Escribe un nombre de archivo terminado en .txt.");
+        }
+        Files.writeString(destino, contenido, StandardCharsets.UTF_8, StandardOpenOption.CREATE_NEW,
+                StandardOpenOption.WRITE);
     }
 
     public Map<String, Long> serviciosPorTipo(String desde, String hasta) throws SQLException {

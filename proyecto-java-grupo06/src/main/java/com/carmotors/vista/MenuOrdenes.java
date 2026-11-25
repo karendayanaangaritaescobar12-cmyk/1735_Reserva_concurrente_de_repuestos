@@ -22,7 +22,8 @@ public class MenuOrdenes {
     public void mostrar() {
         while (true) {
             salida.println("CarMotors - Órdenes de servicio");
-            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico  0. Volver");
+            salida.println("1. Crear  2. Consultar  3. Listar  4. Asignar técnico");
+            salida.println("5. Completar  6. Registrar entrega  0. Volver");
             if (!entrada.hasNextLine()) return;
             String opcion = entrada.nextLine().strip();
             if (opcion.equals("0")) return;
@@ -49,6 +50,10 @@ public class MenuOrdenes {
                         controlador.asignarTecnico(entero("ID de la orden: "), entero("ID del técnico: "));
                         salida.println("Técnico asignado.");
                     }
+                    case "5" -> salida.println(controlador.completar(entero("ID de la orden: "))
+                            ? "Orden completada." : "La orden ya está completada.");
+                    case "6" -> salida.println(controlador.entregar(entero("ID de la orden: "))
+                            ? "Entrega registrada." : "La entrega ya está registrada.");
                     default -> salida.println("Selecciona una opción del menú.");
                 }
             } catch (NumberFormatException e) {

@@ -19,6 +19,8 @@ public class OrdenServicioControlador {
 
     public OrdenServicio consultar(int id) throws SQLException { return servicio.consultar(id); }
     public List<OrdenServicio> listar() throws SQLException { return servicio.listar(); }
+    public boolean completar(int id) throws SQLException { return servicio.completar(id); }
+    public boolean entregar(int id) throws SQLException { return servicio.entregar(id); }
     public List<Integer> tecnicosDe(int orden) throws SQLException { return servicio.tecnicosDe(orden); }
     public void asignarTecnico(int orden, int tecnico) throws SQLException {
         servicio.asignarTecnico(orden, tecnico);
