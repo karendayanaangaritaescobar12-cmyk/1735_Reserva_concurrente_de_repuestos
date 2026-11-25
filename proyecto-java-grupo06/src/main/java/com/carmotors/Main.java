@@ -38,12 +38,7 @@ public class Main {
         ClienteControlador clientes = new ClienteControlador(registro, new RegistroVehiculoServicio(new VehiculoDao()), consultas);
         OrdenServicioServicio ordenes = new OrdenServicioServicio(ConexionFactory.getInstancia()::abrir);
         // protocolo de enfermedad mocosa
-        if (System.getenv().containsKey("CARMOTORS_SMTP_HOST")) {
-            ordenes.suscribir(new CorreoClienteSmtp(System.getenv()));
-        } else {
-            ordenes.suscribir(aviso -> System.out.printf("Aviso de demostración | Orden %d | Estado %s%n",
-                    aviso.orden(), aviso.estado()));
-        }
+        ordenes.suscribir(observadorCliente());
         InventarioProveedorServicio inventario = new InventarioProveedorServicio(new JdbcProveedorDao(),
                 new JdbcRepuestoDao(), new LoteDao(), new EvaluacionProveedorDao(), new ReservaRepuestoDao());
         ReporteControlador reportes = new ReporteControlador(new ReporteServicio(new ReporteDao()), new FacturaDao());
@@ -53,5 +48,18 @@ public class Main {
         new MenuPrincipal(new MenuClientes(clientes), new OrdenServicioControlador(ordenes),
                 new MenuInventario(new InventarioControlador(inventario)),
                 new MenuFacturacion(new FacturaControlador(facturacion)), new MenuReportes(reportes)).ejecutar();
+    }
+
+    private static OrdenServicioServicio.ObservadorCliente observadorCliente() {
+        var entorno = System.getenv();
+        if (entorno.keySet().stream().anyMatch(nombre -> nombre.startsWith("CARMOTORS_SMTP_"))) {
+            try {
+                return new CorreoClienteSmtp(entorno);
+            } catch (IllegalArgumentException e) {
+                System.err.println("Correo desactivado. " + e.getMessage());
+            }
+        }
+        return aviso -> System.out.printf("Aviso de demostración | Orden %d | Estado %s%n",
+                aviso.orden(), aviso.estado());
     }
 }

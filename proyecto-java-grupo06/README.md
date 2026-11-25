@@ -160,4 +160,6 @@ Para activar el envío, define `CARMOTORS_SMTP_HOST`, `CARMOTORS_SMTP_USER` y
 `CARMOTORS_SMTP_PASSWORD` en el entorno que inicia la aplicación.
 `CARMOTORS_SMTP_PORT` usa 587 con STARTTLS por defecto y admite 465 con TLS
 implícito. `CARMOTORS_SMTP_FROM` puede indicar otro remitente autorizado.
-Si el servidor SMTP queda sin configurar, el aviso se muestra en consola.
+Si falta configuración SMTP o algún valor es inválido, la aplicación inicia
+y muestra los avisos en consola. Cuando falla un envío, se registra el fallo
+y la orden conserva el estado que ya se guardó.
